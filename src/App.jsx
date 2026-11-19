@@ -446,7 +446,6 @@ function App() {
       ?? ''
     : '';
 
-  const [documentation, setDocumentation] = useState('');
   const [documentationMode, setDocumentationMode] = useState('edit');
 
   // QUIETGRID_DISK_SAVE
@@ -454,12 +453,6 @@ function App() {
   const [diskSaveStatus, setDiskSaveStatus] = useState(
     'Disk folder not connected',
   );
-
-  useEffect(() => {
-    setDocumentation(selectedDocumentation);
-    setDocumentationMode('edit');
-  }, [level, selectedId, selectedDocumentation]);
-
 
   // QUIETGRID_DISK_SAVE
   const chooseDocsFolder = async () => {
@@ -541,7 +534,7 @@ function App() {
 
       await writeMarkdownFile(
         filePath,
-        documentation,
+        selectedDocumentation,
       );
 
       setDiskSaveStatus(`Saved: ${filePath}`);
@@ -625,6 +618,7 @@ function App() {
   const selectNode = (_, node) => {
   console.log('NODE CLICKED:', node.id, node.data.label);
   setSelectedId(node.id);
+  setDocumentationMode('edit');
   setDescription(node.data.description || '');
 };
 
@@ -638,6 +632,7 @@ function App() {
     setParentId(node.id);
     setSelectedId(null);
     setDescription('');
+    setDocumentationMode('edit');
   };
 
   const goBack = () => {
@@ -650,6 +645,7 @@ function App() {
     setHistory((current) => current.slice(0, -1));
     setSelectedId(null);
     setDescription('');
+    setDocumentationMode('edit');
   };
 
   const navigateToLevel = (nextLevel) => {
@@ -658,6 +654,7 @@ function App() {
     setHistory([]);
     setSelectedId(null);
     setDescription('');
+    setDocumentationMode('edit');
   };
 
   const addNode = () => {
@@ -684,6 +681,7 @@ function App() {
 
     setSelectedId(id);
     setDescription(node.data.description);
+    setDocumentationMode('edit');
   };
 
   const updateDocumentation = (value) => {
@@ -691,8 +689,6 @@ function App() {
 
     const selectedNodeId = selected.id;
     const filePath = getDocumentationPath(level, selectedNodeId);
-
-    setDocumentation(value);
 
     setDocumentationFiles((current) => ({
       ...current,
@@ -898,6 +894,7 @@ const exportProject = () => {
                         setHistory([]);
                         setSelectedId(node.id);
                         setDescription(node.data.description || '');
+                        setDocumentationMode('edit');
                       }}
                     >
                       <span className="docs-tree-file-icon">MD</span>
@@ -1077,7 +1074,7 @@ const exportProject = () => {
                 {documentationMode === 'edit' ? (
                   <textarea
                     className="markdown-input"
-                    value={documentation}
+                    value={selectedDocumentation}
                     onChange={(event) =>
                       updateDocumentation(event.target.value)
                     }
@@ -1086,9 +1083,9 @@ const exportProject = () => {
                   />
                 ) : (
                   <div className="markdown-preview">
-                    {documentation.trim() ? (
+                    {selectedDocumentation.trim() ? (
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {documentation}
+                        {selectedDocumentation}
                       </ReactMarkdown>
                     ) : (
                       <p className="markdown-empty">
