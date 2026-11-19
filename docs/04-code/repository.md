@@ -1,0 +1,3 @@
+# PaymentRepository
+
+Persists payment data.

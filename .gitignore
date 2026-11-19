@@ -44,3 +44,9 @@ dist-ssr
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local installation backups
+.backup-*/
+
+# Local installer scripts
+install-*.sh

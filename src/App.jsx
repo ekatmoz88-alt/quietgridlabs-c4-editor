@@ -1,6 +1,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import JSZip from 'jszip';
 import {
   ReactFlow,
   Background,
@@ -318,6 +321,36 @@ const defaultParents = {
   code: 'payments',
 };
 
+
+// QUIETGRID_DOCUMENTATION_TREE
+const documentationFolders = {
+  context: '01-context',
+  container: '02-container',
+  component: '03-component',
+  code: '04-code',
+};
+
+function getDocumentationPath(level, id) {
+  return `docs/${documentationFolders[level]}/${id}.md`;
+}
+
+function createDocumentationFiles(model, existing = {}) {
+  const files = { ...existing };
+
+  for (const level of Object.keys(documentationFolders)) {
+    for (const node of model[level]?.nodes ?? []) {
+      const filePath = getDocumentationPath(level, node.id);
+
+      if (typeof files[filePath] !== 'string') {
+        files[filePath] = node.data.documentation ||
+          `# ${node.data.label}\n\n${node.data.description || ''}\n`;
+      }
+    }
+  }
+
+  return files;
+}
+
 const STORAGE_KEY = 'quietgridlabs-project-v1';
 
 function readSavedProject() {
@@ -355,6 +388,12 @@ function App() {
   const [model, setModel] = useState(
     () => savedProject?.model ?? initialModel,
   );
+  const [documentationFiles, setDocumentationFiles] = useState(() =>
+    createDocumentationFiles(
+      savedProject?.model ?? initialModel,
+      savedProject?.documentationFiles ?? {},
+    ),
+  );
   const [level, setLevel] = useState('context');
   const [parentId, setParentId] = useState(null);
   const [history, setHistory] = useState([]);
@@ -370,12 +409,13 @@ function App() {
         JSON.stringify({
           name: projectName,
           model,
+          documentationFiles,
         }),
       );
     } catch (error) {
       console.error('Could not save project:', error);
     }
-  }, [model, projectName]);
+  }, [model, projectName, documentationFiles]);
 
 
   const currentDiagram = model[level];
@@ -400,6 +440,143 @@ function App() {
   );
 
   const selected = nodes.find((node) => node.id === selectedId) ?? null;
+  const selectedDocumentation = selected
+    ? documentationFiles[getDocumentationPath(level, selected.id)]
+      ?? selected.data.documentation
+      ?? ''
+    : '';
+
+  const [documentation, setDocumentation] = useState('');
+  const [documentationMode, setDocumentationMode] = useState('edit');
+
+  // QUIETGRID_DISK_SAVE
+  const [docsDirectoryHandle, setDocsDirectoryHandle] = useState(null);
+  const [diskSaveStatus, setDiskSaveStatus] = useState(
+    'Disk folder not connected',
+  );
+
+  useEffect(() => {
+    setDocumentation(selectedDocumentation);
+    setDocumentationMode('edit');
+  }, [level, selectedId, selectedDocumentation]);
+
+
+  // QUIETGRID_DISK_SAVE
+  const chooseDocsFolder = async () => {
+    try {
+      if (!window.showDirectoryPicker) {
+        setDiskSaveStatus(
+          'Folder access is not supported in this browser.',
+        );
+        return;
+      }
+
+      const handle = await window.showDirectoryPicker({
+        mode: 'readwrite',
+      });
+
+      setDocsDirectoryHandle(handle);
+      setDiskSaveStatus(`Connected: ${handle.name}`);
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Could not select docs folder:', error);
+        setDiskSaveStatus('Could not open folder.');
+      }
+    }
+  };
+
+  const writeMarkdownFile = async (filePath, content) => {
+    if (!docsDirectoryHandle) {
+      throw new Error('Choose the docs folder first.');
+    }
+
+    let permission = await docsDirectoryHandle.queryPermission({
+      mode: 'readwrite',
+    });
+
+    if (permission !== 'granted') {
+      permission = await docsDirectoryHandle.requestPermission({
+        mode: 'readwrite',
+      });
+    }
+
+    if (permission !== 'granted') {
+      throw new Error('Write permission was not granted.');
+    }
+
+    const relativePath = filePath.replace(/^docs\//, '');
+    const parts = relativePath.split('/');
+    const fileName = parts.pop();
+
+    let directory = docsDirectoryHandle;
+
+    for (const part of parts) {
+      directory = await directory.getDirectoryHandle(part, {
+        create: true,
+      });
+    }
+
+    const fileHandle = await directory.getFileHandle(fileName, {
+      create: true,
+    });
+
+    const writable = await fileHandle.createWritable();
+
+    try {
+      await writable.write(content);
+      await writable.close();
+    } catch (error) {
+      await writable.abort();
+      throw error;
+    }
+  };
+
+  const saveCurrentMarkdown = async () => {
+    if (!selected) return;
+
+    const filePath = getDocumentationPath(level, selected.id);
+
+    try {
+      setDiskSaveStatus('Saving...');
+
+      await writeMarkdownFile(
+        filePath,
+        documentation,
+      );
+
+      setDiskSaveStatus(`Saved: ${filePath}`);
+    } catch (error) {
+      console.error('Could not save Markdown file:', error);
+      setDiskSaveStatus(`Save failed: ${error.message}`);
+    }
+  };
+
+  const saveAllMarkdown = async () => {
+    try {
+      if (!docsDirectoryHandle) {
+        setDiskSaveStatus('Choose the docs folder first.');
+        return;
+      }
+
+      setDiskSaveStatus('Saving all Markdown files...');
+
+      const files = createDocumentationFiles(
+        model,
+        documentationFiles,
+      );
+
+      for (const [filePath, content] of Object.entries(files)) {
+        await writeMarkdownFile(filePath, content);
+      }
+
+      setDiskSaveStatus(
+        `Saved ${Object.keys(files).length} Markdown files.`,
+      );
+    } catch (error) {
+      console.error('Could not save all Markdown files:', error);
+      setDiskSaveStatus(`Save failed: ${error.message}`);
+    }
+  };
 
   const currentParent = Object.values(model)
     .flatMap((diagram) => diagram.nodes)
@@ -509,6 +686,38 @@ function App() {
     setDescription(node.data.description);
   };
 
+  const updateDocumentation = (value) => {
+    if (!selected) return;
+
+    const selectedNodeId = selected.id;
+    const filePath = getDocumentationPath(level, selectedNodeId);
+
+    setDocumentation(value);
+
+    setDocumentationFiles((current) => ({
+      ...current,
+      [filePath]: value,
+    }));
+
+    setModel((current) => ({
+      ...current,
+      [level]: {
+        ...current[level],
+        nodes: current[level].nodes.map((node) =>
+          node.id === selectedNodeId
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  documentation: value,
+                },
+              }
+            : node,
+        ),
+      },
+    }));
+  };
+
   const saveDescription = () => {
     if (!selected) return;
 
@@ -540,6 +749,7 @@ const exportProject = () => {
   const project = {
     name: projectName,
     model,
+    documentationFiles,
   };
 
   const blob = new Blob(
@@ -561,6 +771,48 @@ const exportProject = () => {
     URL.revokeObjectURL(url);
   }, 1000);
 };
+
+  const exportProjectZip = async () => {
+    const zip = new JSZip();
+    const root = zip.folder('quietgridlabs-project');
+
+    const project = {
+      name: projectName,
+      model,
+      documentationFiles,
+    };
+
+    root.file('project.json', JSON.stringify(project, null, 2));
+
+    root.file(
+      'README.md',
+      `# ${projectName}\n\nQuietGridLabs C4 architecture project.\n\nSee the \`docs/\` directory for element documentation.\n`,
+    );
+
+    root.file(
+      'docs/README.md',
+      '# Documentation tree\n\n' +
+      levels.map((item) => `- [${item.label}](./${documentationFolders[item.id]}/)`).join('\n') +
+      '\n',
+    );
+
+    for (const [filePath, content] of Object.entries(documentationFiles)) {
+      root.file(filePath, content);
+    }
+
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = 'quietgridlabs-project.zip';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
   const currentLevelLabel =
     levels.find((item) => item.id === level)?.label;
 
@@ -588,6 +840,9 @@ const exportProject = () => {
           <button className="secondary-button" onClick={exportProject}>
             Export JSON
           </button>
+          <button className="secondary-button" onClick={exportProjectZip}>
+            Export ZIP
+          </button>
           <button className="primary-button" onClick={addNode}>
             ＋ Add element
           </button>
@@ -614,6 +869,45 @@ const exportProject = () => {
               {level === item.id && <span className="level-indicator" />}
             </button>
           ))}
+
+
+          {/* QUIETGRID_DOCUMENTATION_TREE */}
+          <section className="docs-tree">
+            <div className="sidebar-heading">DOCUMENTATION FILES</div>
+
+            {levels.map((item) => (
+              <div className="docs-tree-group" key={item.id}>
+                <div className="docs-tree-level">
+                  <span>{item.number}</span>
+                  {item.label}
+                </div>
+
+                {(model[item.id]?.nodes ?? []).map((node) => {
+                  const filePath = getDocumentationPath(item.id, node.id);
+                  const isSelected = level === item.id && selectedId === node.id;
+
+                  return (
+                    <button
+                      type="button"
+                      key={node.id}
+                      className={`docs-tree-file ${isSelected ? 'active' : ''}`}
+                      title={filePath}
+                      onClick={() => {
+                        setLevel(item.id);
+                        setParentId(node.parentId ?? null);
+                        setHistory([]);
+                        setSelectedId(node.id);
+                        setDescription(node.data.description || '');
+                      }}
+                    >
+                      <span className="docs-tree-file-icon">MD</span>
+                      <span>{node.data.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </section>
 
           <div className="sidebar-bottom">
             <div className="sidebar-heading">WORKSPACE</div>
@@ -726,13 +1020,87 @@ const exportProject = () => {
 
               <div className="field-label">DOCUMENTATION</div>
 
-              <div className="documentation-card">
-                <div className="doc-icon">M↓</div>
-                <div>
-                  <strong>Markdown notes</strong>
-                  <span>Rich documentation editor — next step</span>
+              <section className="markdown-editor">
+                <div className="markdown-editor-header">
+                  <div>
+                    <strong>Markdown documentation</strong>
+                    <span>Documentation for this C4 element</span>
+                  </div>
+                  <div className="markdown-disk-actions">
+                  <span className="markdown-status">Auto-save</span>
+
+                  <button
+                    type="button"
+                    className="markdown-disk-button"
+                    onClick={chooseDocsFolder}
+                  >
+                    Choose docs folder
+                  </button>
+
+                  <button
+                    type="button"
+                    className="markdown-disk-button"
+                    onClick={saveCurrentMarkdown}
+                    disabled={!docsDirectoryHandle || !selected}
+                  >
+                    Save current file
+                  </button>
+
+                  <button
+                    type="button"
+                    className="markdown-disk-button primary"
+                    onClick={saveAllMarkdown}
+                    disabled={!docsDirectoryHandle}
+                  >
+                    Save all
+                  </button>
                 </div>
-              </div>
+                </div>
+
+                <div className="markdown-tabs">
+                  <button
+                    type="button"
+                    className={documentationMode === 'edit' ? 'active' : ''}
+                    onClick={() => setDocumentationMode('edit')}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className={documentationMode === 'preview' ? 'active' : ''}
+                    onClick={() => setDocumentationMode('preview')}
+                  >
+                    Preview
+                  </button>
+                </div>
+
+                {documentationMode === 'edit' ? (
+                  <textarea
+                    className="markdown-input"
+                    value={documentation}
+                    onChange={(event) =>
+                      updateDocumentation(event.target.value)
+                    }
+                    placeholder={"# Element documentation\n\nDescribe the component...\n\n## Responsibilities\n\n- First responsibility\n- Second responsibility\n\n## Example\n\n```http\nGET /api/example\n```"}
+                    spellCheck="false"
+                  />
+                ) : (
+                  <div className="markdown-preview">
+                    {documentation.trim() ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {documentation}
+                      </ReactMarkdown>
+                    ) : (
+                      <p className="markdown-empty">
+                        No documentation yet. Switch to Edit to add it.
+                      </p>
+                    )}
+                  </div>
+                )}
+                <div className="markdown-disk-status" role="status">
+                  {diskSaveStatus}
+                </div>
+              </section>
 
               <div className="documentation-card muted-card">
                 <div className="doc-icon">⌁</div>

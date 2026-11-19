@@ -800,3 +800,301 @@ button {
     padding: 22px 16px;
   }
 }
+
+/* MARKDOWN DOCUMENTATION EDITOR */
+
+.markdown-editor {
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid #dbeafe;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.markdown-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 10px;
+  background: #f8fbff;
+}
+
+.markdown-editor-header strong,
+.markdown-editor-header span {
+  display: block;
+}
+
+.markdown-editor-header strong {
+  color: #1e3a8a;
+  font-size: 10px;
+}
+
+.markdown-editor-header span {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 9px;
+}
+
+.markdown-editor-header .markdown-status {
+  color: #15803d;
+  white-space: nowrap;
+}
+
+.markdown-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 7px 9px;
+  border-top: 1px solid #dbeafe;
+  border-bottom: 1px solid #dbeafe;
+  background: #fbfdff;
+}
+
+.markdown-tabs button {
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: #64748b;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.markdown-tabs button.active {
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.markdown-input {
+  display: block;
+  width: 100%;
+  min-height: 240px;
+  padding: 12px;
+  resize: vertical;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  color: #172b4d;
+  background: #ffffff;
+  font-family: 'DejaVu Sans Mono', monospace;
+  font-size: 10px;
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+.markdown-input:focus {
+  box-shadow: inset 0 0 0 1px #93c5fd;
+}
+
+.markdown-preview {
+  min-height: 150px;
+  max-height: 420px;
+  overflow: auto;
+  padding: 12px;
+  color: #334155;
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  margin: 15px 0 8px;
+  color: #0f3a82;
+  font-family: 'Manrope', sans-serif;
+  line-height: 1.35;
+}
+
+.markdown-preview h1 {
+  font-size: 17px;
+}
+
+.markdown-preview h2 {
+  font-size: 14px;
+}
+
+.markdown-preview h3 {
+  font-size: 12px;
+}
+
+.markdown-preview p {
+  margin: 8px 0;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-left: 20px;
+}
+
+.markdown-preview li {
+  margin: 4px 0;
+}
+
+.markdown-preview code {
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.markdown-preview pre {
+  overflow-x: auto;
+  padding: 10px;
+  border-radius: 7px;
+  color: #e2e8f0;
+  background: #172b4d;
+}
+
+.markdown-preview pre code {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+}
+
+.markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  padding: 6px;
+  border: 1px solid #dbeafe;
+  text-align: left;
+}
+
+.markdown-preview th {
+  background: #eff6ff;
+}
+
+.markdown-preview blockquote {
+  margin: 10px 0;
+  padding: 5px 10px;
+  border-left: 3px solid #38bdf8;
+  color: #64748b;
+  background: #f8fbff;
+}
+
+.markdown-empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* QUIETGRID_DOCUMENTATION_TREE */
+
+.docs-tree {
+  margin-top: 20px;
+  padding-bottom: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.docs-tree > .sidebar-heading {
+  margin-top: 16px;
+}
+
+.docs-tree-group {
+  margin: 8px 0;
+}
+
+.docs-tree-level {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.docs-tree-level span {
+  color: #2563eb;
+  font-variant-numeric: tabular-nums;
+}
+
+.docs-tree-file {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  padding: 6px 8px 6px 17px;
+  border: 0;
+  border-radius: 5px;
+  color: #475569;
+  background: transparent;
+  text-align: left;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.docs-tree-file:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.docs-tree-file.active {
+  color: #1d4ed8;
+  background: #dbeafe;
+  font-weight: 700;
+}
+
+.docs-tree-file-icon {
+  flex: 0 0 auto;
+  color: #64748b;
+  font-family: monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+
+/* QUIETGRID_DISK_SAVE */
+
+.markdown-disk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.markdown-disk-button {
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 6px 9px;
+  background: #fff;
+  color: #334155;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.markdown-disk-button:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.markdown-disk-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.markdown-disk-button.primary {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.markdown-disk-button.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.markdown-disk-status {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
