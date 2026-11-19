@@ -11,7 +11,8 @@ QuietGridLabs C4 Editor provides a visual workspace for creating and maintaining
 - Four C4 levels: System Context, Container, Component, and Code
 - Visual architecture modeling and diagram editing
 - Element descriptions and Markdown documentation
-- Markdown editing and preview
+- Markdown editing toolbar and preview (tables, lists, code blocks and links)
+- Diagram source/image insertion helpers in element documentation
 - Automatic project-state persistence in browser LocalStorage
 - Save the current Markdown file to a selected local directory
 - Save all Markdown documentation files to disk
