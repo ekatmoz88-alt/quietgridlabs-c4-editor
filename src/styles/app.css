@@ -1098,3 +1098,39 @@ button {
   font-size: 11px;
   overflow-wrap: anywhere;
 }
+
+/* MARKDOWN AUTHORING TOOLBAR */
+.markdown-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 8px;
+  border-bottom: 1px solid #dbeafe;
+  background: #f8fbff;
+}
+
+.markdown-toolbar button {
+  min-height: 27px;
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  color: #1e40af;
+  background: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.markdown-toolbar button:hover {
+  border-color: #38bdf8;
+  background: #e0f2fe;
+}
+
+.markdown-editor-hint {
+  margin: 0;
+  padding: 8px 10px;
+  border-top: 1px solid #e2e8f0;
+  color: #64748b;
+  background: #fbfdff;
+  font-size: 9px;
+  line-height: 1.5;
+}
