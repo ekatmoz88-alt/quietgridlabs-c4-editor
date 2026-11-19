@@ -1,6 +1,6 @@
 # QuietGridLabs C4 Editor
 
-A browser-based C4 architecture modeling and documentation editor built with React and Vite.
+A browser-based C4 architecture modeling and documentation editor built with React and Vite. The application is local-first and is under active development.
 
 ## Overview
 
@@ -11,7 +11,8 @@ QuietGridLabs C4 Editor provides a visual workspace for creating and maintaining
 - Four C4 levels: System Context, Container, Component, and Code
 - Visual architecture modeling and diagram editing
 - Element descriptions and Markdown documentation
-- Markdown editing and preview
+- Markdown editing toolbar and preview (tables, lists, code blocks and links)
+- Diagram source/image insertion helpers in element documentation
 - Automatic project-state persistence in browser LocalStorage
 - Save the current Markdown file to a selected local directory
 - Save all Markdown documentation files to disk
@@ -87,6 +88,13 @@ The browser asks for permission to access the selected directory. Browser LocalS
 
 Project state is stored in browser LocalStorage. ZIP export creates a portable archive containing project data and Markdown documentation.
 
-## Repository
+## Project documentation
 
-[GitHub repository](https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor)
+- [Portfolio case study](docs/portfolio/case-study.md) — implemented capabilities, technology, engineering decisions and a demonstration walkthrough.
+- [Product specification and roadmap](docs/roadmap/product-specification.md) — proposed capabilities and phased implementation plan.
+- [Open feature requests](https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor/issues) — implementation backlog.
+
+## Repository and demo
+
+- [Live application](https://ekatmoz88-alt.github.io/quietgridlabs-c4-editor/)
+- [GitHub repository](https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor)
