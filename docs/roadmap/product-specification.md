@@ -11,7 +11,9 @@ The application currently provides:
 - C4 levels: System Context, Container, Component and Code.
 - Interactive diagram editing with React Flow.
 - Markdown documentation associated with individual C4 elements.
+- Markdown editing toolbar with shortcuts for headings, bold text, lists, tables, code blocks and links.
 - Markdown preview with GitHub Flavored Markdown support (including tables and lists).
+- Diagram insertion helpers for PlantUML/Mermaid source blocks and relative SVG/PNG image references; diagram rendering remains a separate planned capability.
 - Browser LocalStorage persistence.
 - JSON export and ZIP export with project data and Markdown files.
 - Local-directory Markdown saving through the File System Access API.
@@ -32,6 +34,7 @@ The following are not yet implemented: JSON import/restore, PlantUML and ER diag
 - Each C4 element has its own Markdown document, keyed by stable element ID.
 - Support headings, paragraphs, tables, ordered/unordered lists, fenced code blocks, links and images.
 - Support embedding or linking diagrams from documentation.
+- Provide authoring shortcuts for common Markdown structures and diagram source/image references.
 - Documentation preview must render supported Markdown consistently.
 - Export must preserve the documentation tree and referenced assets.
 
@@ -39,6 +42,7 @@ The following are not yet implemented: JSON import/restore, PlantUML and ER diag
 - Editing one element's document does not overwrite another element's document.
 - Markdown tables, lists and code fences render correctly in preview and remain intact in exports.
 - A documentation page can reference a diagram by stable diagram ID or relative asset path.
+- The editor provides insertion controls for common Markdown syntax and diagram references without requiring users to type the full syntax manually.
 - Missing assets produce a visible warning rather than a broken silent reference.
 
 ## 4. Architecture diagrams
