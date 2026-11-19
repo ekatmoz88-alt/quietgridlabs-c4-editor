@@ -18,7 +18,9 @@ The current repository documents and implements the following baseline:
 - Four C4 views: System Context, Container, Component and Code.
 - Interactive diagram editing using React Flow.
 - Element descriptions and Markdown documentation associated with C4 elements.
+- Markdown authoring toolbar for headings, emphasis, lists, tables, code blocks and links.
 - Markdown preview with GitHub Flavored Markdown support, including tables and lists.
+- Insertion helpers for PlantUML/Mermaid source snippets and relative SVG/PNG diagram references (rendering is not yet built in).
 - Browser LocalStorage persistence.
 - Saving an individual Markdown document or the documentation set to a user-selected local directory (Chromium-based browsers).
 - ZIP export of project data and Markdown documentation.
@@ -44,7 +46,7 @@ The current application stores its working project in browser LocalStorage. This
 
 ### Documentation as a project artifact
 
-Documentation is maintained per C4 element in Markdown. The preview uses GitHub Flavored Markdown so that tables, lists and fenced code examples can be used in technical descriptions. The repository also contains a documentation directory intended to keep generated element documents organized by C4 level.
+Documentation is maintained per C4 element in Markdown. The editor includes formatting shortcuts and a GitHub Flavored Markdown preview, so tables, lists and fenced code examples can be authored and reviewed in technical descriptions. Diagram source snippets and relative image references can be inserted; automatic diagram rendering remains planned. The repository also contains a documentation directory intended to keep generated element documents organized by C4 level.
 
 ### Portable export
 
