@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -447,6 +447,7 @@ function App() {
     : '';
 
   const [documentationMode, setDocumentationMode] = useState('edit');
+  const markdownInputRef = useRef(null);
 
   // QUIETGRID_DISK_SAVE
   const [docsDirectoryHandle, setDocsDirectoryHandle] = useState(null);
@@ -682,6 +683,25 @@ function App() {
     setSelectedId(id);
     setDescription(node.data.description);
     setDocumentationMode('edit');
+  };
+
+  const insertMarkdown = (snippet) => {
+    if (!selected) return;
+
+    const textarea = markdownInputRef.current;
+    const current = selectedDocumentation;
+    const start = textarea?.selectionStart ?? current.length;
+    const end = textarea?.selectionEnd ?? current.length;
+    const next = current.slice(0, start) + snippet + current.slice(end);
+
+    updateDocumentation(next);
+
+    requestAnimationFrame(() => {
+      if (!textarea) return;
+      textarea.focus();
+      const cursor = start + snippet.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
   };
 
   const updateDocumentation = (value) => {
@@ -1072,15 +1092,32 @@ const exportProject = () => {
                 </div>
 
                 {documentationMode === 'edit' ? (
-                  <textarea
-                    className="markdown-input"
-                    value={selectedDocumentation}
-                    onChange={(event) =>
-                      updateDocumentation(event.target.value)
-                    }
-                    placeholder={"# Element documentation\n\nDescribe the component...\n\n## Responsibilities\n\n- First responsibility\n- Second responsibility\n\n## Example\n\n```http\nGET /api/example\n```"}
-                    spellCheck="false"
-                  />
+                  <>
+                    <div className="markdown-toolbar" role="toolbar" aria-label="Markdown formatting">
+                      <button type="button" onClick={() => insertMarkdown('## Heading\n')} title="Insert heading">H2</button>
+                      <button type="button" onClick={() => insertMarkdown('**bold text**')} title="Insert bold text"><strong>B</strong></button>
+                      <button type="button" onClick={() => insertMarkdown('- List item\n')} title="Insert list">List</button>
+                      <button type="button" onClick={() => insertMarkdown('| Column 1 | Column 2 |\n| --- | --- |\n| Value | Value |\n')} title="Insert table">Table</button>
+                      <button type="button" onClick={() => insertMarkdown('```text\ncode example\n```\n')} title="Insert code block">Code</button>
+                      <button type="button" onClick={() => insertMarkdown('[Link text](https://example.com)')} title="Insert link">Link</button>
+                      <button type="button" onClick={() => insertMarkdown('![Diagram](./diagrams/diagram.svg)\n')} title="Insert diagram image reference">Diagram image</button>
+                      <button type="button" onClick={() => insertMarkdown('```plantuml\n@startuml\nAlice -> Bob: Request\nBob --> Alice: Response\n@enduml\n```\n')} title="Insert PlantUML source">PlantUML</button>
+                      <button type="button" onClick={() => insertMarkdown('```mermaid\nflowchart TD\n  A[Start] --> B[Process]\n  B --> C[End]\n```\n')} title="Insert Mermaid source">Mermaid</button>
+                    </div>
+                    <textarea
+                      ref={markdownInputRef}
+                      className="markdown-input"
+                      value={selectedDocumentation}
+                      onChange={(event) =>
+                        updateDocumentation(event.target.value)
+                      }
+                      placeholder={"# Element documentation\n\nDescribe the component...\n\n## Responsibilities\n\n- First responsibility\n- Second responsibility\n\n## Example\n\n```http\nGET /api/example\n```"}
+                      spellCheck="false"
+                    />
+                    <p className="markdown-editor-hint">
+                      Insert diagram source as PlantUML or Mermaid code, or reference an SVG/PNG file stored relative to this Markdown document. Diagram rendering is a separate roadmap feature.
+                    </p>
+                  </>
                 ) : (
                   <div className="markdown-preview">
                     {selectedDocumentation.trim() ? (
