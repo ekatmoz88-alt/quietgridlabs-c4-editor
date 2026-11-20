@@ -14,12 +14,10 @@ export default function CloudWorkspace({ project, onLoad }) {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const refresh = async () => {
-    const rows = await listCloudProjects();
-    setProjects(rows);
-  };
   useEffect(() => {
-    if (session?.access_token && cloudConfigured) refresh().catch((error) => setStatus(error.message));
+    if (session?.access_token && cloudConfigured) {
+      listCloudProjects().then(setProjects).catch((error) => setStatus(error.message));
+    }
   }, [session?.access_token]);
 
   const run = async (action) => {
@@ -31,13 +29,13 @@ export default function CloudWorkspace({ project, onLoad }) {
     const next = mode === 'signup' ? await signUp(email, password) : await signIn(email, password);
     setSession(next);
     setStatus(next.access_token ? 'Signed in.' : 'Check your email to confirm your account, then sign in.');
-    if (next.access_token) await refresh();
+    if (next.access_token) setProjects(await listCloudProjects());
   });
   const save = () => run(async () => {
     const result = selectedId && revision !== null
       ? await updateCloudProject(selectedId, project, revision)
       : await createCloudProject(project);
-    setSelectedId(result.id); setRevision(result.revision); await refresh();
+    setSelectedId(result.id); setRevision(result.revision); setProjects(await listCloudProjects());
     setStatus('Cloud project saved.');
   });
   const load = () => run(async () => {
