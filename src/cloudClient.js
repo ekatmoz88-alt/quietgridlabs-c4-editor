@@ -13,7 +13,7 @@ function headers(token) {
     'Content-Type': 'application/json',
   };
 }
-async function request(path, options = {}, token) {
+async function request(path, options = {}, token, retried = false) {
   if (!cloudConfigured) throw new Error('Cloud storage is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
   const response = await fetch(`${config.url}${path}`, { ...options, headers: { ...headers(token), ...options.headers } });
   const payload = response.status === 204 ? null : await response.json().catch(() => null);
