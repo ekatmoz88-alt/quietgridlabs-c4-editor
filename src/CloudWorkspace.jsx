@@ -4,7 +4,7 @@ import {
   listCloudProjects, createCloudProject, updateCloudProject, loadCloudProject,
 } from './cloudClient.js';
 export default function CloudWorkspace({ project, onLoad }) {
-  const [session, setSession] = useState(() => getCloudSession());
+  const [session, setSession] = useState(() => consumeAuthCallback() || getCloudSession());
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -13,10 +13,6 @@ export default function CloudWorkspace({ project, onLoad }) {
   const [revision, setRevision] = useState(null);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    const callbackSession = consumeAuthCallback();
-    if (callbackSession) { setSession(callbackSession); setStatus('Email confirmed. You are signed in.'); }
-  }, []);
   useEffect(() => {
     if (session?.access_token && cloudConfigured) listCloudProjects().then(setProjects).catch((error) => setStatus(error.message));
   }, [session?.access_token]);
