@@ -1,6 +1,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import {
+  PROJECT_FORMAT,
+  PROJECT_SCHEMA_VERSION,
+  validateProject,
+} from './projectSchema';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import JSZip from 'jszip';
@@ -314,13 +319,13 @@ const initialModel = {
   },
 };
 
-const defaultParents = {
-  context: null,
-  container: 'bank',
-  component: 'api',
-  code: 'payments',
-};
+const getDefaultParent = (model, level) => {
+  if (level === 'context') return null;
 
+  return (
+    model[level]?.nodes?.find((node) => node.parentId)?.parentId ?? null
+  );
+};
 
 // QUIETGRID_DOCUMENTATION_TREE
 const documentationFolders = {
@@ -651,7 +656,7 @@ function App() {
 
   const navigateToLevel = (nextLevel) => {
     setLevel(nextLevel);
-    setParentId(defaultParents[nextLevel]);
+    setParentId(getDefaultParent(model, nextLevel));
     setHistory([]);
     setSelectedId(null);
     setDescription('');
@@ -760,16 +765,76 @@ function App() {
       }));
     });
   };
+const importProject = async (event) => {
+  const file = event.target.files?.[0];
 
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const validation = validateProject(parsed);
+
+    if (!validation.valid) {
+      window.alert(
+        `Invalid project file:\n${validation.errors.join('\n')}`,
+      );
+      return;
+    }
+
+    const imported = validation.project;
+
+    const confirmed = window.confirm(
+      `Import "${imported.name}"?\n\nThe current project will be replaced.`,
+    );
+
+    if (!confirmed) return;
+
+    setModel(imported.model);
+    setDocumentationFiles(
+      createDocumentationFiles(
+        imported.model,
+        imported.documentationFiles,
+      ),
+    );
+    setProjectName(imported.name);
+
+    setLevel('context');
+    setParentId(null);
+    setHistory([]);
+    setSelectedId('user');
+    setDescription('');
+    setDocumentationMode('edit');
+
+  } catch (error) {
+    console.error('Could not import project:', error);
+    window.alert(
+      'Could not import project. The file is invalid or unreadable.',
+    );
+  } finally {
+    event.target.value = '';
+  }
+};
 const exportProject = () => {
   const project = {
+    format: PROJECT_FORMAT,
+    schemaVersion: PROJECT_SCHEMA_VERSION,
     name: projectName,
     model,
     documentationFiles,
   };
 
+  const validation = validateProject(project);
+
+  if (!validation.valid) {
+    window.alert(
+      `Cannot export project:\n${validation.errors.join('\n')}`,
+    );
+    return;
+  }
+
   const blob = new Blob(
-    [JSON.stringify(project, null, 2)],
+    [JSON.stringify(validation.project, null, 2)],
     { type: 'application/json' },
   );
 
@@ -783,23 +848,33 @@ const exportProject = () => {
   link.click();
   link.remove();
 
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
   const exportProjectZip = async () => {
     const zip = new JSZip();
     const root = zip.folder('quietgridlabs-project');
+const project = {
+  format: PROJECT_FORMAT,
+  schemaVersion: PROJECT_SCHEMA_VERSION,
+  name: projectName,
+  model,
+  documentationFiles,
+};
 
-    const project = {
-      name: projectName,
-      model,
-      documentationFiles,
-    };
+const validation = validateProject(project);
 
-    root.file('project.json', JSON.stringify(project, null, 2));
+if (!validation.valid) {
+  window.alert(
+    `Cannot export project:\n${validation.errors.join('\n')}`,
+  );
+  return;
+}
 
+root.file(
+  'project.json',
+  JSON.stringify(validation.project, null, 2),
+);
     root.file(
       'README.md',
       `# ${projectName}\n\nQuietGridLabs C4 architecture project.\n\nSee the \`docs/\` directory for element documentation.\n`,
@@ -853,6 +928,19 @@ const exportProject = () => {
         </div>
 
         <div className="top-actions">
+<input
+  id="project-import-input"
+  type="file"
+  accept=".json,application/json"
+  onChange={importProject}
+  hidden
+/>
+<label
+  htmlFor="project-import-input"
+  className="secondary-button"
+>
+  Import JSON
+</label>
           <button className="secondary-button" onClick={exportProject}>
             Export JSON
           </button>
