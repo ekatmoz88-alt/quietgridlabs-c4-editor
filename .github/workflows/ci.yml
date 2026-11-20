@@ -34,5 +34,11 @@ jobs:
       - name: Run automated tests
         run: npm test
 
+      - name: Install MCP server dependencies
+        run: npm install --prefix mcp-server --no-package-lock
+
+      - name: Check MCP server syntax
+        run: node --check mcp-server/index.js
+
       - name: Build application
         run: npm run build
