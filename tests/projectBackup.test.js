@@ -170,5 +170,5 @@ test('ZIP backup restores legacy archives without a manifest', async () => {
   const restored = await readProjectBackup(legacy);
   assert.equal(restored.schemaVersion, PROJECT_SCHEMA_VERSION);
   assert.deepEqual(restored.diagrams, { sequences: [], erModels: [] });
-  assert.equal(restored.documentationFiles['docs/01-context/system.md'], '# System\\n\\nBackup fixture.\\n');
+  assert.equal(restored.documentationFiles['docs/01-context/system.md'], makeProject().documentationFiles['docs/01-context/system.md']);
 });
