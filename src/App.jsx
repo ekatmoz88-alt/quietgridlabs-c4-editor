@@ -830,7 +830,7 @@ const importProjectZip = async (event) => {
     const projectPath = `${rootDirectory}project.json`;
 
     const archiveFiles = Object.entries(zip.files)
-      .filter(([path, entry]) => !entry.dir)
+      .filter(([, entry]) => !entry.dir)
       .map(([path]) => path);
 
     if (
@@ -876,6 +876,16 @@ const importProjectZip = async (event) => {
         safePaths.has(path)
       ) {
         throw new Error('Manifest contains an invalid file path.');
+      }
+
+      const isAllowedPath =
+        path === 'project.json' ||
+        path === 'README.md' ||
+        path === 'docs/README.md' ||
+        path.startsWith('docs/');
+
+      if (!isAllowedPath) {
+        throw new Error(`Unsupported file in backup: ${path}`);
       }
 
       safePaths.add(path);
@@ -1089,7 +1099,7 @@ root.file(
   JSON.stringify(manifest, null, 2),
 );
 
-    for (const [filePath, content] of Object.entries(documentationFiles)) {
+    for (const [filePath, content] of Object.entries(validation.project.documentationFiles)) {
       root.file(filePath, content);
     }
 
@@ -1130,6 +1140,19 @@ root.file(
         </div>
 
         <div className="top-actions">
+<input
+  id="project-import-zip-input"
+  type="file"
+  accept=".zip,application/zip"
+  onChange={importProjectZip}
+  hidden
+/>
+<label
+  htmlFor="project-import-zip-input"
+  className="secondary-button"
+>
+  Import ZIP
+</label>
 <input
   id="project-import-input"
   type="file"
