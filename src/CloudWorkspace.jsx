@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
-  cloudConfigured, getCloudSession, signIn, signUp, signOut,
+  cloudConfigured, getCloudSession, consumeAuthCallback, signIn, signUp, signOut,
   listCloudProjects, createCloudProject, updateCloudProject, loadCloudProject,
 } from './cloudClient.js';
-
 export default function CloudWorkspace({ project, onLoad }) {
   const [session, setSession] = useState(() => getCloudSession());
   const [email, setEmail] = useState('');
@@ -14,57 +13,32 @@ export default function CloudWorkspace({ project, onLoad }) {
   const [revision, setRevision] = useState(null);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
-
   useEffect(() => {
-    if (session?.access_token && cloudConfigured) {
-      listCloudProjects().then(setProjects).catch((error) => setStatus(error.message));
-    }
+    const callbackSession = consumeAuthCallback();
+    if (callbackSession) { setSession(callbackSession); setStatus('Email confirmed. You are signed in.'); }
+  }, []);
+  useEffect(() => {
+    if (session?.access_token && cloudConfigured) listCloudProjects().then(setProjects).catch((error) => setStatus(error.message));
   }, [session?.access_token]);
-
-  const run = async (action) => {
-    setBusy(true); setStatus('');
-    try { await action(); } catch (error) { setStatus(error.message); }
-    finally { setBusy(false); }
-  };
+  const run = async (action) => { setBusy(true); setStatus(''); try { await action(); } catch (error) { setStatus(error.message); } finally { setBusy(false); } };
   const authenticate = (mode) => run(async () => {
     const next = mode === 'signup' ? await signUp(email, password) : await signIn(email, password);
-    setSession(next);
-    setPassword('');
-    setShowPassword(false);
+    setSession(next); setPassword(''); setShowPassword(false);
     setStatus(next.access_token ? 'Signed in.' : 'Check your email to confirm your account, then sign in.');
     if (next.access_token) setProjects(await listCloudProjects());
   });
   const save = () => run(async () => {
-    const result = selectedId && revision !== null
-      ? await updateCloudProject(selectedId, project, revision)
-      : await createCloudProject(project);
-    setSelectedId(result.id); setRevision(result.revision); setProjects(await listCloudProjects());
-    setStatus('Cloud project saved.');
+    const result = selectedId && revision !== null ? await updateCloudProject(selectedId, project, revision) : await createCloudProject(project);
+    setSelectedId(result.id); setRevision(result.revision); setProjects(await listCloudProjects()); setStatus('Cloud project saved.');
   });
   const load = () => run(async () => {
     if (!selectedId) throw new Error('Choose a cloud project first.');
-    const result = await loadCloudProject(selectedId);
-    setRevision(result.revision); onLoad(result.project_data); setStatus('Cloud project loaded.');
+    const result = await loadCloudProject(selectedId); setRevision(result.revision); onLoad(result.project_data); setStatus('Cloud project loaded.');
   });
-  const select = (id) => {
-    setSelectedId(id);
-    const item = projects.find((entry) => entry.id === id);
-    setRevision(item?.revision ?? null);
-  };
+  const select = (id) => { setSelectedId(id); const item = projects.find((entry) => entry.id === id); setRevision(item?.revision ?? null); };
   const handleSignOut = () => run(async () => {
-    try {
-      await signOut();
-    } finally {
-      // Leave the UI signed out even if the remote logout request cannot complete.
-      setSession(null);
-      setPassword('');
-      setShowPassword(false);
-      setProjects([]);
-      setSelectedId('');
-      setRevision(null);
-    }
+    try { await signOut(); } finally { setSession(null); setPassword(''); setShowPassword(false); setProjects([]); setSelectedId(''); setRevision(null); }
   });
-
   return (
     <section className="cloud-workspace">
       <div className="diagram-studio-header">
@@ -76,18 +50,7 @@ export default function CloudWorkspace({ project, onLoad }) {
       ) : !session?.access_token ? (
         <div className="cloud-auth">
           <label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-          <label>Password
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input style={{ flex: 1, minWidth: 0 }} type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
-              <button
-                type="button"
-                className="secondary-button"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                aria-pressed={showPassword}
-                onClick={() => setShowPassword((visible) => !visible)}
-              >{showPassword ? 'Скрыть' : 'Показать'}</button>
-            </div>
-          </label>
+          <label>Password<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><input style={{ flex: 1, minWidth: 0 }} type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /><button type="button" className="secondary-button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)}>{showPassword ? 'Скрыть' : 'Показать'}</button></div></label>
           <div className="diagram-actions"><button className="primary-button" disabled={busy || !email || !password} onClick={() => authenticate('signin')}>Sign in</button><button className="secondary-button" disabled={busy || !email || password.length < 8} onClick={() => authenticate('signup')}>Create account</button></div>
         </div>
       ) : (
