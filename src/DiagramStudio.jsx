@@ -100,7 +100,7 @@ export default function DiagramStudio({ diagrams, onChange, elements }) {
       const response = await fetch('https://kroki.io/mermaid/svg', {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain; charset=utf-8', Accept: 'image/svg+xml' },
-        body: lines.join('\\n'),
+        body: lines.join('\n'),
       });
       if (!response.ok) throw new Error('Renderer returned HTTP ' + response.status + '.');
       const svg = await response.text();
