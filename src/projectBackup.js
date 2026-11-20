@@ -116,7 +116,9 @@ export async function readProjectBackup(input) {
     manifest.format !== 'quietgridlabs-c4-backup' ||
     manifest.backupVersion !== 1 ||
     manifest.projectFormat !== PROJECT_FORMAT ||
-    !Number.isInteger(manifest.schemaVersion) ||\n    manifest.schemaVersion < 1 ||\n    manifest.schemaVersion > PROJECT_SCHEMA_VERSION ||
+    !Number.isInteger(manifest.schemaVersion) ||
+    manifest.schemaVersion < 1 ||
+    manifest.schemaVersion > PROJECT_SCHEMA_VERSION ||
     manifest.rootDirectory !== 'quietgridlabs-project' ||
     !Array.isArray(manifest.files)
   ) {
