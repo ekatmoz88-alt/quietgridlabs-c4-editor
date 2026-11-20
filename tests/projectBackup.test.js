@@ -84,6 +84,21 @@ test('ZIP backup rejects files that are not listed in the manifest', async () =>
   );
 });
 
+test('ZIP backup rejects entries above the uncompressed file-size limit', async () => {
+  const archive = await createProjectBackup(makeProject());
+  const oversized = await mutateArchive(archive, (zip) => {
+    zip.file(
+      'quietgridlabs-project/docs/01-context/system.md',
+      'x'.repeat(10 * 1024 * 1024 + 1),
+    );
+  });
+
+  await assert.rejects(
+    readProjectBackup(oversized),
+    /10 MB limit/i,
+  );
+});
+
 test('project validation rejects node IDs that can escape documentation folders', () => {
   const project = makeProject();
   project.model.context.nodes.push({
