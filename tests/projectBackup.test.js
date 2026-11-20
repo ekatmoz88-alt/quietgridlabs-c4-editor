@@ -25,7 +25,7 @@ function makeProject() {
     documentationFiles: {
       'docs/01-context/system.md': '# System\n\nBackup fixture.\n',
     },
-    diagrams: { sequences: [], erModels: [] },
+    diagrams: {\n      sequences: [{ id: 'sequence-1', title: 'Login flow', source: '@startuml\\nUser -> API\\n@enduml', linkedElementIds: [] }],\n      erModels: [{ id: 'erd-1', title: 'Accounts', linkedElementIds: [], entities: [{ id: 'account', name: 'account', columns: [{ id: 'id', name: 'id', type: 'uuid', primaryKey: true, foreignKey: false, nullable: false }] }], relationships: [] }],\n    },
   };
 }
 
