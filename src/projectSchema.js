@@ -20,6 +20,7 @@ function validateLinkedElementIds(value, path, allNodeIds, errors) {
 
 export function validateProject(input) {
   const errors = [];
+  const allNodeIds = new Set();
   if (!input || typeof input !== 'object' || Array.isArray(input)) return { valid: false, errors: ['Project must be a JSON object.'] };
   if (input.format !== undefined && input.format !== PROJECT_FORMAT) errors.push('Unsupported project format.');
   const version = input.schemaVersion ?? 1;
@@ -41,7 +42,6 @@ export function validateProject(input) {
   }
   // Validate references after collecting every level's node IDs.
   const nodeIdsByLevel = new Map();
-  const allNodeIds = new Set();
   for (const level of LEVELS) {
     const diagram = input.model?.[level];
     const ids = new Set(Array.isArray(diagram?.nodes) ? diagram.nodes.map((node) => node?.id).filter((id) => typeof id === 'string') : []);
