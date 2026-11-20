@@ -9,6 +9,8 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createProjectBackup, readProjectBackup } from './projectBackup';
+import DiagramStudio from './DiagramStudio.jsx';
+import CloudWorkspace from './CloudWorkspace.jsx';
 import {
   ReactFlow,
   Background,
@@ -407,6 +409,8 @@ function App() {
     () => savedProject?.name || 'Internet Banking System',
   );
   const [description, setDescription] = useState('');
+  const [diagrams, setDiagrams] = useState(() => savedProject?.diagrams ?? { sequences: [], erModels: [] });
+  const [workspaceView, setWorkspaceView] = useState('model');
   useEffect(() => {
     try {
       window.localStorage.setItem(
@@ -415,12 +419,13 @@ function App() {
           name: projectName,
           model,
           documentationFiles,
+          diagrams,
         }),
       );
     } catch (error) {
       console.error('Could not save project:', error);
     }
-  }, [model, projectName, documentationFiles]);
+  }, [model, projectName, documentationFiles, diagrams]);
 
 
   const currentDiagram = model[level];
@@ -798,6 +803,7 @@ const importProject = async (event) => {
       ),
     );
     setProjectName(imported.name);
+    setDiagrams(imported.diagrams);
 
     setLevel('context');
     setParentId(null);
@@ -835,6 +841,7 @@ const importProjectZip = async (event) => {
       name: imported.name,
       model: imported.model,
       documentationFiles: preparedDocumentation,
+      diagrams: imported.diagrams,
     };
 
     window.localStorage.setItem(
@@ -845,6 +852,7 @@ const importProjectZip = async (event) => {
     setModel(imported.model);
     setDocumentationFiles(preparedDocumentation);
     setProjectName(imported.name);
+    setDiagrams(imported.diagrams);
     setLevel('context');
     setParentId(null);
     setHistory([]);
@@ -865,6 +873,7 @@ const exportProject = () => {
     name: projectName,
     model,
     documentationFiles,
+    diagrams,
   };
 
   const validation = validateProject(project);
@@ -902,6 +911,7 @@ const exportProject = () => {
         name: projectName,
         model,
         documentationFiles,
+        diagrams,
       };
       const archive = await createProjectBackup(project);
       const blob = new Blob([archive], { type: 'application/zip' });
@@ -923,6 +933,19 @@ const exportProject = () => {
 
   const currentLevelLabel =
     levels.find((item) => item.id === level)?.label;
+
+  const applyCloudProject = (candidate) => {
+    const validation = validateProject(candidate);
+    if (!validation.valid) throw new Error(validation.errors.join('\n'));
+    const restored = validation.project;
+    const docs = createDocumentationFiles(restored.model, restored.documentationFiles);
+    setModel(restored.model);
+    setDocumentationFiles(docs);
+    setProjectName(restored.name);
+    setDiagrams(restored.diagrams);
+    setLevel('context'); setParentId(null); setHistory([]); setSelectedId('user');
+  };
+  const projectSnapshot = { format: PROJECT_FORMAT, schemaVersion: PROJECT_SCHEMA_VERSION, name: projectName, model, documentationFiles, diagrams };
 
   return (
     <main className="app-shell">
@@ -1079,41 +1102,33 @@ const exportProject = () => {
                 </button>
               )}
 
-              <button
+              <button className={`tool-button ${workspaceView === 'model' ? 'active' : ''}`} onClick={() => setWorkspaceView('model')}>C4 model</button>
+              <button className={`tool-button ${workspaceView === 'diagrams' ? 'active' : ''}`} onClick={() => setWorkspaceView('diagrams')}>Sequence / ER</button>
+              <button className={`tool-button ${workspaceView === 'cloud' ? 'active' : ''}`} onClick={() => setWorkspaceView('cloud')}>Cloud</button>
+              {workspaceView === 'model' && <button
                 className="tool-button"
                 onClick={() => selected && openChild(null, selected)}
                 disabled={!selected?.data.childLevel}
               >
                 Open child level ↗
-              </button>
+              </button>}
             </div>
           </div>
 
-          <div className="canvas">
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onNodeClick={selectNode}
-              onNodeDoubleClick={openChild}
-              fitView
-              fitViewOptions={{ padding: 0.25 }}
-              minZoom={0.2}
-              maxZoom={1.8}
-            >
-              <Background color="#dce3e9" gap={22} size={1} />
-              <Controls />
-              <MiniMap nodeStrokeWidth={3} zoomable pannable />
-            </ReactFlow>
-          </div>
-
-          <div className="canvas-footer">
-            <span>{nodes.length} elements</span>
-            <span>{edges.length} relationships</span>
-            <span>Double-click an element to open its child level</span>
-          </div>
+          {workspaceView === 'model' ? (
+            <>
+              <div className="canvas">
+                <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={selectNode} onNodeDoubleClick={openChild} fitView fitViewOptions={{ padding: 0.25 }} minZoom={0.2} maxZoom={1.8}>
+                  <Background color="#dce3e9" gap={22} size={1} /><Controls /><MiniMap nodeStrokeWidth={3} zoomable pannable />
+                </ReactFlow>
+              </div>
+              <div className="canvas-footer"><span>{nodes.length} elements</span><span>{edges.length} relationships</span><span>Double-click an element to open its child level</span></div>
+            </>
+          ) : workspaceView === 'diagrams' ? (
+            <DiagramStudio diagrams={diagrams} onChange={setDiagrams} elements={Object.entries(model).flatMap(([modelLevel, diagram]) => diagram.nodes.map((node) => ({ ...node, id: modelLevel + ':' + node.id, data: { ...node.data, label: node.data.label + ' · ' + modelLevel } })))} />
+          ) : (
+            <CloudWorkspace project={projectSnapshot} onLoad={applyCloudProject} />
+          )}
         </section>
 
         <aside className="inspector">
