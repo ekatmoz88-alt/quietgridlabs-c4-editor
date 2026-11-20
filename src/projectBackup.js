@@ -3,7 +3,7 @@ import {
   PROJECT_FORMAT,
   PROJECT_SCHEMA_VERSION,
   validateProject,
-} from './projectSchema';
+} from './projectSchema.js';
 
 const ROOT_DIRECTORY = 'quietgridlabs-project/';
 const MANIFEST_PATH = `${ROOT_DIRECTORY}manifest.json`;
