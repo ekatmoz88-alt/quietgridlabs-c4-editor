@@ -155,3 +155,20 @@ test('ZIP backup migrates a schema v1 project without diagram artifacts', async 
   assert.equal(restored.schemaVersion, PROJECT_SCHEMA_VERSION);
   assert.deepEqual(restored.diagrams, { sequences: [], erModels: [] });
 });
+
+test('ZIP backup restores legacy archives without a manifest', async () => {
+  const archive = await createProjectBackup(makeProject());
+  const legacy = await mutateArchive(archive, async (zip) => {
+    zip.remove('quietgridlabs-project/manifest.json');
+    const projectPath = 'quietgridlabs-project/project.json';
+    const project = JSON.parse(await zip.file(projectPath).async('string'));
+    project.schemaVersion = 1;
+    delete project.diagrams;
+    zip.file(projectPath, JSON.stringify(project));
+  });
+
+  const restored = await readProjectBackup(legacy);
+  assert.equal(restored.schemaVersion, PROJECT_SCHEMA_VERSION);
+  assert.deepEqual(restored.diagrams, { sequences: [], erModels: [] });
+  assert.equal(restored.documentationFiles['docs/01-context/system.md'], '# System\\n\\nBackup fixture.\\n');
+});
