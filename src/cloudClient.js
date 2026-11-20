@@ -2,7 +2,8 @@ const env = import.meta.env ?? {};
 const config = { url: env.VITE_SUPABASE_URL?.replace(/\/$/, ''), key: env.VITE_SUPABASE_ANON_KEY };
 export const cloudConfigured = Boolean(config.url && config.key);
 const authKey = 'quietgridlabs-cloud-session';
-const authRedirectUrl = new URL(import.meta.env.BASE_URL || '/', window.location.origin).toString();
+const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+const authRedirectUrl = new URL(env.BASE_URL || '/', appOrigin).toString();
 function headers(token) {
   return { apikey: config.key, Authorization: `Bearer ${token || config.key}`, 'Content-Type': 'application/json' };
 }
