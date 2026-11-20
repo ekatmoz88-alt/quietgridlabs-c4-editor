@@ -9,6 +9,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import JSZip from 'jszip';
+import { createProjectBackup, readProjectBackup } from './projectBackup';
 import {
   ReactFlow,
   Background,
@@ -817,161 +818,14 @@ const importProject = async (event) => {
 };
 const importProjectZip = async (event) => {
   const file = event.target.files?.[0];
-
   if (!file) return;
 
   try {
-    const zip = await JSZip.loadAsync(file, {
-      checkCRC32: true,
-    });
-
-    const rootDirectory = 'quietgridlabs-project/';
-    const manifestPath = `${rootDirectory}manifest.json`;
-    const projectPath = `${rootDirectory}project.json`;
-
-    const archiveFiles = Object.entries(zip.files)
-      .filter(([, entry]) => !entry.dir)
-      .map(([path]) => path);
-
-    if (
-      archiveFiles.some((path) => !path.startsWith(rootDirectory)) ||
-      !zip.files[rootDirectory] ||
-      !zip.files[manifestPath] ||
-      !zip.files[projectPath]
-    ) {
-      throw new Error('Invalid archive structure.');
-    }
-
-    const manifest = JSON.parse(
-      await zip.files[manifestPath].async('string'),
-    );
-
-    if (
-      !manifest ||
-      manifest.format !== 'quietgridlabs-c4-backup' ||
-      manifest.backupVersion !== 1 ||
-      manifest.projectFormat !== PROJECT_FORMAT ||
-      manifest.schemaVersion !== PROJECT_SCHEMA_VERSION ||
-      manifest.rootDirectory !== 'quietgridlabs-project' ||
-      !Array.isArray(manifest.files)
-    ) {
-      throw new Error('Unsupported or invalid backup manifest.');
-    }
-
-    const safePaths = new Set();
-
-    for (const path of manifest.files) {
-      if (
-        typeof path !== 'string' ||
-        !path ||
-        path.startsWith('/') ||
-        path.includes('\\') ||
-        path.includes('\0') ||
-        path.split('/').some(
-          (segment) =>
-            !segment ||
-            segment === '.' ||
-            segment === '..',
-        ) ||
-        safePaths.has(path)
-      ) {
-        throw new Error('Manifest contains an invalid file path.');
-      }
-
-      const isAllowedPath =
-        path === 'project.json' ||
-        path === 'README.md' ||
-        path === 'docs/README.md' ||
-        path.startsWith('docs/');
-
-      if (!isAllowedPath) {
-        throw new Error(`Unsupported file in backup: ${path}`);
-      }
-
-      safePaths.add(path);
-    }
-
-    const expectedFiles = manifest.files
-      .map((path) => `${rootDirectory}${path}`)
-      .sort();
-
-    const actualFiles = archiveFiles
-      .filter((path) => path !== manifestPath)
-      .map((path) => path)
-      .sort();
-
-    if (
-      JSON.stringify(expectedFiles) !==
-      JSON.stringify(actualFiles)
-    ) {
-      throw new Error('Archive contents do not match the manifest.');
-    }
-
-    for (const requiredPath of [
-      'project.json',
-      'README.md',
-      'docs/README.md',
-    ]) {
-      if (!safePaths.has(requiredPath)) {
-        throw new Error(`Required file is missing: ${requiredPath}`);
-      }
-    }
-
-    const parsedProject = JSON.parse(
-      await zip.files[projectPath].async('string'),
-    );
-
-    const validation = validateProject(parsedProject);
-
-    if (!validation.valid) {
-      throw new Error(validation.errors.join('\n'));
-    }
-
-    const imported = validation.project;
-
-    if (
-      imported.schemaVersion !== manifest.schemaVersion ||
-      imported.format !== manifest.projectFormat
-    ) {
-      throw new Error('Project metadata does not match the manifest.');
-    }
-
-    const archivedDocumentation = {};
-
-    for (const path of manifest.files) {
-      if (!path.startsWith('docs/') || path === 'docs/README.md') {
-        continue;
-      }
-
-      archivedDocumentation[path] = await zip.files[
-        `${rootDirectory}${path}`
-      ].async('string');
-    }
-
-    if (
-      JSON.stringify(
-        Object.keys(archivedDocumentation).sort(),
-      ) !==
-      JSON.stringify(
-        Object.keys(imported.documentationFiles).sort(),
-      )
-    ) {
-      throw new Error('Documentation file list does not match project.json.');
-    }
-
-    for (const [path, content] of Object.entries(
-      imported.documentationFiles,
-    )) {
-      if (archivedDocumentation[path] !== content) {
-        throw new Error(`Documentation content mismatch: ${path}`);
-      }
-    }
-
+    const imported = await readProjectBackup(file);
     const preparedDocumentation = createDocumentationFiles(
       imported.model,
       imported.documentationFiles,
     );
-
     const confirmed = window.confirm(
       `Restore "${imported.name}" from ZIP backup?\n\nThe current project will be replaced.`,
     );
@@ -992,20 +846,15 @@ const importProjectZip = async (event) => {
     setModel(imported.model);
     setDocumentationFiles(preparedDocumentation);
     setProjectName(imported.name);
-
     setLevel('context');
     setParentId(null);
     setHistory([]);
     setSelectedId('user');
     setDescription('');
     setDocumentationMode('edit');
-
   } catch (error) {
     console.error('Could not restore ZIP backup:', error);
-
-    window.alert(
-      `Could not restore ZIP backup:\n${error.message}`,
-    );
+    window.alert(`Could not restore ZIP backup:\n${error.message}`);
   } finally {
     event.target.value = '';
   }
@@ -1047,73 +896,30 @@ const exportProject = () => {
 };
 
   const exportProjectZip = async () => {
-    const zip = new JSZip();
-    const root = zip.folder('quietgridlabs-project');
-const project = {
-  format: PROJECT_FORMAT,
-  schemaVersion: PROJECT_SCHEMA_VERSION,
-  name: projectName,
-  model,
-  documentationFiles,
-};
+    try {
+      const project = {
+        format: PROJECT_FORMAT,
+        schemaVersion: PROJECT_SCHEMA_VERSION,
+        name: projectName,
+        model,
+        documentationFiles,
+      };
+      const archive = await createProjectBackup(project);
+      const blob = new Blob([archive], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
 
-const validation = validateProject(project);
+      link.href = url;
+      link.download = 'quietgridlabs-project.zip';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
 
-if (!validation.valid) {
-  window.alert(
-    `Cannot export project:\n${validation.errors.join('\n')}`,
-  );
-  return;
-}
-const manifest = {
-  format: 'quietgridlabs-c4-backup',
-  backupVersion: 1,
-  projectFormat: PROJECT_FORMAT,
-  schemaVersion: PROJECT_SCHEMA_VERSION,
-  rootDirectory: 'quietgridlabs-project',
-  files: [
-    'project.json',
-    'README.md',
-    'docs/README.md',
-    ...Object.keys(validation.project.documentationFiles),
-  ],
-};
-
-root.file(
-  'project.json',
-  JSON.stringify(validation.project, null, 2),
-);
-    root.file(
-      'README.md',
-      `# ${projectName}\n\nQuietGridLabs C4 architecture project.\n\nSee the \`docs/\` directory for element documentation.\n`,
-    );
-
-    root.file(
-      'docs/README.md',
-      '# Documentation tree\n\n' +
-      levels.map((item) => `- [${item.label}](./${documentationFolders[item.id]}/)`).join('\n') +
-      '\n',
-    );
-root.file(
-  'manifest.json',
-  JSON.stringify(manifest, null, 2),
-);
-
-    for (const [filePath, content] of Object.entries(validation.project.documentationFiles)) {
-      root.file(filePath, content);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    } catch (error) {
+      console.error('Could not export ZIP backup:', error);
+      window.alert(`Cannot export ZIP backup:\n${error.message}`);
     }
-
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = 'quietgridlabs-project.zip';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
   };
 
   const currentLevelLabel =
