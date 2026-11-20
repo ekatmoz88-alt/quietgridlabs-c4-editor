@@ -92,7 +92,7 @@ test('schema rejects duplicate ER relationship ids', () => {
   });
   const result = validateProject(project);
   assert.equal(result.valid, false);
-  assert.match(result.errors.join(' '), /relationships\\[1\\]\\.id must be unique/i);
+  assert.match(result.errors.join(' '), /relationships\[1\]\.id must be unique/i);
 });
 
 test('schema rejects linked diagram references to missing C4 elements', () => {
@@ -103,5 +103,5 @@ test('schema rejects linked diagram references to missing C4 elements', () => {
   });
   const result = validateProject(project);
   assert.equal(result.valid, false);
-  assert.match(result.errors.join(' '), /linkedElementIds\\[0\\] references a missing model element/i);
+  assert.match(result.errors.join(' '), /linkedElementIds\[0\] references a missing model element/i);
 });
