@@ -1,0 +1,14 @@
+{
+  "name": "quietgridlabs-c4-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server for authenticated QuietGridLabs C4 architecture projects",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.12.1",
+    "zod": "3.25.67"
+  }
+}
