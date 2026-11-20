@@ -138,3 +138,20 @@ test('ZIP backup export rejects an invalid project before creating an archive', 
     /project name must be a non-empty string/i,
   );
 });
+
+test('ZIP backup migrates a schema v1 project without diagram artifacts', async () => {
+  const archive = await createProjectBackup(makeProject());
+  const legacy = await mutateArchive(archive, async (zip) => {
+    const root = 'quietgridlabs-project/';
+    const project = JSON.parse(await zip.file(root + 'project.json').async('string'));
+    delete project.diagrams;
+    project.schemaVersion = 1;
+    zip.file(root + 'project.json', JSON.stringify(project));
+    const manifest = JSON.parse(await zip.file(root + 'manifest.json').async('string'));
+    manifest.schemaVersion = 1;
+    zip.file(root + 'manifest.json', JSON.stringify(manifest));
+  });
+  const restored = await readProjectBackup(legacy);
+  assert.equal(restored.schemaVersion, PROJECT_SCHEMA_VERSION);
+  assert.deepEqual(restored.diagrams, { sequences: [], erModels: [] });
+});
