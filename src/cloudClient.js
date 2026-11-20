@@ -1,6 +1,7 @@
+const env = import.meta.env ?? {};
 const config = {
-  url: import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, ''),
-  key: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  url: env.VITE_SUPABASE_URL?.replace(/\/$/, ''),
+  key: env.VITE_SUPABASE_ANON_KEY,
 };
 
 export const cloudConfigured = Boolean(config.url && config.key);
