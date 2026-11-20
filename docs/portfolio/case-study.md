@@ -23,7 +23,7 @@ The current repository documents and implements the following baseline:
 - Insertion helpers for PlantUML/Mermaid source snippets and relative SVG/PNG diagram references (rendering is not yet built in).
 - Browser LocalStorage persistence.
 - Saving an individual Markdown document or the documentation set to a user-selected local directory (Chromium-based browsers).
-- ZIP export of project data and Markdown documentation.
+- ZIP export and validated restore of project data and Markdown documentation.\n- First-class PlantUML sequence artifacts with rendered previews through Kroki.\n- Structured ER models with tables, columns, PK/FK flags, nullability and relationship cardinalities.\n- Optional Supabase authentication and private cloud storage with owner-scoped RLS and revision conflict detection.\n- MCP server tools for listing, reading, searching and explicitly confirmed project updates.
 
 ## Technology
 
@@ -46,11 +46,11 @@ The current application stores its working project in browser LocalStorage. This
 
 ### Documentation as a project artifact
 
-Documentation is maintained per C4 element in Markdown. The editor includes formatting shortcuts and a GitHub Flavored Markdown preview, so tables, lists and fenced code examples can be authored and reviewed in technical descriptions. Diagram source snippets and relative image references can be inserted; automatic diagram rendering remains planned. The repository also contains a documentation directory intended to keep generated element documents organized by C4 level.
+Documentation is maintained per C4 element in Markdown. The editor includes formatting shortcuts and a GitHub Flavored Markdown preview, so tables, lists and fenced code examples can be authored and reviewed in technical descriptions. Sequence diagrams are stored as PlantUML source and can be previewed through the external Kroki renderer. The source remains available when the renderer is offline. The repository also contains a documentation directory intended to keep generated element documents organized by C4 level.
 
 ### Portable export
 
-The application provides ZIP export for project data and Markdown documentation. A complete, validated import/restore round trip is a planned enhancement and is not claimed as implemented.
+The application provides ZIP export for project data and Markdown documentation. JSON and ZIP imports are schema-validated before replacing the active project; ZIP backups preserve the versioned project snapshot and documentation.
 
 ## Current limitations and roadmap
 
