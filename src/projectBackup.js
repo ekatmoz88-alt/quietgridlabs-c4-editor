@@ -103,7 +103,6 @@ export async function readProjectBackup(input) {
   if (
     archiveFiles.some((path) => !path.startsWith(ROOT_DIRECTORY)) ||
     !zip.files[ROOT_DIRECTORY] ||
-    !zip.files[MANIFEST_PATH] ||
     !zip.files[PROJECT_PATH]
   ) {
     throw new Error('Invalid archive structure.');
