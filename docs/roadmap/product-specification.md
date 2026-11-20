@@ -1,6 +1,6 @@
 # Product specification: architecture diagrams, navigation, portability, cloud and AI integrations
 
-**Status:** Proposed  
+**Status:** Partially implemented (schema v2, sequence/ER editor, optional cloud storage and MCP tools delivered on feature branch)  
 **Repository:** quietgridlabs-c4-editor  
 **Branch:** docs/product-roadmap-and-spec  
 **Scope:** Product roadmap for capabilities beyond the current local-first C4 editor.
@@ -18,7 +18,7 @@ The application currently provides:
 - JSON export and ZIP export with project data and Markdown files.
 - Local-directory Markdown saving through the File System Access API.
 
-The following are not yet implemented: JSON import/restore, PlantUML and ER diagram authoring/rendering, cross-level relationship exploration, cloud accounts and collaboration, MCP/API integrations.
+Implemented on the current feature branch: validated JSON/ZIP import and restore; schema-v2 diagram artifacts; PlantUML sequence source editing and Kroki preview; ER tables/columns/keys/cardinality editor; optional Supabase account and owner-scoped cloud storage with optimistic revision checks; and a stdio MCP server with read/search/confirmed-update tools. Still pending: typed cross-level relationship explorer, team roles/invitations, realtime collaboration, MCP OAuth/token refresh and browser-to-MCP OAuth hand-off.
 
 ## 2. Product principles
 
@@ -154,12 +154,12 @@ The following are not yet implemented: JSON import/restore, PlantUML and ER diag
 
 | Phase | Scope | Dependency |
 |---|---|---|
-| 1 | Versioned project schema, JSON import, robust ZIP backup/restore | Current local model |
-| 2 | Diagram artifact model, PlantUML sequence diagrams, ER model | Versioned project schema |
+| 1 | Versioned project schema, JSON import, robust ZIP backup/restore | Implemented |
+| 2 | Diagram artifact model, PlantUML sequence diagrams, ER model | Implemented on feature branch |
 | 3 | Typed cross-level relationships and relationship explorer | Stable element IDs and schema |
-| 4 | Cloud identity, project storage, roles and invitations | Stable schema and import/export |
+| 4 | Optional cloud identity and owner-scoped project storage | Implemented; team roles/invitations remain pending |
 | 5 | Collaboration and conflict handling | Cloud authorization and revision model |
-| 6 | Read-only project API and MCP server | Stable API and access control |
+| 6 | Read/search MCP server and validated confirmed update tool | Implemented on feature branch |
 | 7 | Controlled AI write operations and client guides | MCP read tools, validation and audit trail |
 
 ## 10. Non-functional requirements
