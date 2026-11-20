@@ -25,6 +25,7 @@ function makeProject() {
     documentationFiles: {
       'docs/01-context/system.md': '# System\n\nBackup fixture.\n',
     },
+    diagrams: { sequences: [], erModels: [] },
   };
 }
 
