@@ -66,8 +66,16 @@ export function validateProject(input) {
             errors.push(`${level}.nodes[${index}].position is invalid.`);
           }
 
-          if (!node.data || typeof node.data !== 'object') {
+          if (
+            !node.data ||
+            typeof node.data !== 'object' ||
+            Array.isArray(node.data)
+          ) {
             errors.push(`${level}.nodes[${index}].data is invalid.`);
+          } else if (typeof node.data.label !== 'string') {
+            errors.push(
+              `${level}.nodes[${index}].data.label must be a string.`,
+            );
           }
         });
       }
