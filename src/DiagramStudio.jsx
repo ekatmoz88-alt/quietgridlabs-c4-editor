@@ -10,7 +10,7 @@ const emptySequence = () => ({
 const emptyEntity = () => ({
   id: crypto.randomUUID(),
   name: 'NewEntity',
-  columns: [{ id: crypto.randomUUID(), name: 'id', type: 'uuid', primaryKey: true, nullable: false }],
+  columns: [{ id: crypto.randomUUID(), name: 'id', type: 'uuid', primaryKey: true, foreignKey: false, nullable: false }],
 });
 const emptyErModel = () => ({
   id: crypto.randomUUID(),
@@ -87,7 +87,7 @@ export default function DiagramStudio({ diagrams, onChange, elements }) {
   const addColumn = (entityId) => updateErModel({
     entities: erModel.entities.map((entity) => entity.id === entityId ? {
       ...entity,
-      columns: [...entity.columns, { id: crypto.randomUUID(), name: 'new_column', type: 'text', primaryKey: false, nullable: true }],
+      columns: [...entity.columns, { id: crypto.randomUUID(), name: 'new_column', type: 'text', primaryKey: false, foreignKey: false, nullable: true }],
     } : entity),
   });
   const addRelationship = () => {
@@ -167,6 +167,7 @@ export default function DiagramStudio({ diagrams, onChange, elements }) {
                         <input aria-label="Column name" value={column.name} onChange={(event) => updateColumn(entity.id, column.id, { name: event.target.value })} />
                         <input aria-label="Column type" value={column.type} onChange={(event) => updateColumn(entity.id, column.id, { type: event.target.value })} />
                         <label title="Primary key"><input type="checkbox" checked={column.primaryKey} onChange={(event) => updateColumn(entity.id, column.id, { primaryKey: event.target.checked })} /> PK</label>
+                        <label title="Foreign key"><input type="checkbox" checked={column.foreignKey ?? false} onChange={(event) => updateColumn(entity.id, column.id, { foreignKey: event.target.checked })} /> FK</label>
                         <label title="Nullable"><input type="checkbox" checked={column.nullable} onChange={(event) => updateColumn(entity.id, column.id, { nullable: event.target.checked })} /> NULL</label>
                         <button className="icon-button" title="Remove column" onClick={() => updateEntity(entity.id, { columns: entity.columns.filter((item) => item.id !== column.id) })}>×</button>
                       </div>
