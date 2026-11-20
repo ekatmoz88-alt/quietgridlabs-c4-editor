@@ -176,12 +176,11 @@ export async function readProjectBackup(input) {
     }
   }
 
-  const imported = getValidatedProject(
-    JSON.parse(await zip.files[PROJECT_PATH].async('string')),
-  );
+  const rawProject = JSON.parse(await zip.files[PROJECT_PATH].async('string'));
+  const imported = getValidatedProject(rawProject);
 
   if (
-    imported.schemaVersion !== manifest.schemaVersion ||
+    (rawProject.schemaVersion ?? 1) !== manifest.schemaVersion ||
     imported.format !== manifest.projectFormat
   ) {
     throw new Error('Project metadata does not match the manifest.');
