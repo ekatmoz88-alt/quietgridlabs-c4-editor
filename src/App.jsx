@@ -8,7 +8,6 @@ import {
 } from './projectSchema';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import JSZip from 'jszip';
 import { createProjectBackup, readProjectBackup } from './projectBackup';
 import {
   ReactFlow,
