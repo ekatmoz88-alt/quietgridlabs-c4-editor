@@ -7,82 +7,70 @@
 
 ## Overview
 
-QuietGridLabs C4 Editor is a browser-based workspace for creating and documenting software architecture with the C4 model. It combines a visual model editor, element-level inspection and Markdown documentation in one local-first application.
-
-The project explores how architecture diagrams and technical documentation can be maintained together rather than as disconnected deliverables.
+QuietGridLabs C4 Editor is a browser-based workspace for modeling software architecture with C4 and maintaining its supporting documentation and diagrams in one project.
 
 ## Implemented capabilities
 
-The current repository documents and implements the following baseline:
-
 - Four C4 views: System Context, Container, Component and Code.
 - Interactive diagram editing using React Flow.
-- Element descriptions and Markdown documentation associated with C4 elements.
-- Markdown authoring toolbar for headings, emphasis, lists, tables, code blocks and links.
-- Markdown preview with GitHub Flavored Markdown support, including tables and lists.
-- Insertion helpers for PlantUML/Mermaid source snippets and relative SVG/PNG diagram references (rendering is not yet built in).
-- Browser LocalStorage persistence.
-- Saving an individual Markdown document or the documentation set to a user-selected local directory (Chromium-based browsers).
-- ZIP export and validated restore of project data and Markdown documentation.\n- First-class PlantUML sequence artifacts with rendered previews through Kroki.\n- Structured ER models with tables, columns, PK/FK flags, nullability and relationship cardinalities.\n- Optional Supabase authentication and private cloud storage with owner-scoped RLS and revision conflict detection.\n- MCP server tools for listing, reading, searching and explicitly confirmed project updates.
+- Markdown documentation associated with C4 elements.
+- PlantUML sequence artifacts with source editing and on-demand rendered preview.
+- Structured ER models with entities, typed columns, PK/FK flags, nullability and cardinality relationships.
+- Links from sequence and ER artifacts to C4 elements.
+- LocalStorage persistence and local Markdown export.
+- Versioned JSON import/export and validated ZIP backup/restore.
+- Optional Supabase authentication and owner-scoped cloud project storage.
+- Optimistic revision checks to detect concurrent cloud updates.
+- MCP server tools for project listing, reading, searching and explicitly confirmed validated updates.
 
 ## Technology
 
 | Area | Technology |
 |---|---|
-| UI | React 19 |
-| Build tooling | Vite 8 |
+| UI | React 19, Vite 8 |
 | Architecture canvas | `@xyflow/react` |
-| Markdown rendering | `react-markdown`, `remark-gfm` |
-| ZIP generation | `JSZip` |
-| Local file access | File System Access API |
-| Quality checks | ESLint, production build |
-| Hosting | GitHub Pages |
+| Documentation | `react-markdown`, `remark-gfm` |
+| Backup | `JSZip`, versioned project schema |
+| Sequence rendering | PlantUML via Kroki |
+| ER rendering | Mermaid via Kroki |
+| Cloud | Supabase Auth, PostgREST and PostgreSQL RLS |
+| AI integration | Model Context Protocol SDK |
+| Quality | ESLint, Node test runner, GitHub Actions |
 
 ## Engineering decisions
 
-### Local-first workflow
+### Local-first data ownership
 
-The current application stores its working project in browser LocalStorage. This keeps the basic editing workflow independent of an account or backend service. Saving Markdown to a selected directory is a separate operation; browser storage and files on disk are not the same persistence layer.
+The editor continues to work without a cloud account. Cloud upload and restore are explicit actions. Cloud projects are private to their owner through PostgreSQL Row Level Security, and updates include an expected revision so a stale client cannot silently overwrite a newer project.
 
-### Documentation as a project artifact
+### Portable architecture artifacts
 
-Documentation is maintained per C4 element in Markdown. The editor includes formatting shortcuts and a GitHub Flavored Markdown preview, so tables, lists and fenced code examples can be authored and reviewed in technical descriptions. Sequence diagrams are stored as PlantUML source and can be previewed through the external Kroki renderer. The source remains available when the renderer is offline. The repository also contains a documentation directory intended to keep generated element documents organized by C4 level.
+C4 data, Markdown documents, PlantUML sources and structured ER models are stored in a versioned project snapshot. JSON and ZIP import paths validate the complete snapshot before replacing the active local project. Schema v1 projects are normalized to schema v2 with empty diagram collections.
 
-### Portable export
+### Diagram source and rendering
 
-The application provides ZIP export for project data and Markdown documentation. JSON and ZIP imports are schema-validated before replacing the active project; ZIP backups preserve the versioned project snapshot and documentation.
+PlantUML and ER source data remain the portable source of truth. Preview rendering is an explicit action that sends diagram source to the public Kroki renderer; editing and persistence do not depend on the renderer being available.
 
-## Current limitations and roadmap
+### AI integration boundary
 
-The following capabilities are planned and tracked separately; they must not be presented as completed features yet:
+The MCP server exposes scoped project tools and uses a user-scoped Supabase access token. Database RLS is the authorization boundary. Mutating tools require explicit confirmation, validate the project schema and compare the expected revision. Service-role credentials are not used.
 
-1. JSON import and validated backup restoration.
-2. PlantUML sequence diagrams and ER modeling, including links to C4 elements.
-3. Typed cross-level relationships and navigation between related elements.
-4. Optional cloud accounts, project storage, invitations, roles and collaboration.
-5. A versioned project API and MCP integration for Cursor and Claude Code.
+## Current limitations
 
-The product specification and implementation roadmap are maintained in [product-specification.md](../roadmap/product-specification.md). The work is tracked in [GitHub Issues](https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor/issues).
+The following are not yet implemented:
+
+- Team invitations, owner/editor/viewer sharing roles and project membership management.
+- Realtime multi-user collaboration and presence.
+- OAuth hand-off and automatic token refresh for MCP clients.
+- Typed cross-level relationship explorer and navigation.
+- A deployed Supabase backend and configured production secrets are required before cloud features can be used in the hosted demo.
 
 ## Quality and delivery
 
-The repository includes ESLint and a Vite production build as CI quality gates. The `main` branch is protected by a GitHub Ruleset requiring the `build` status check and blocking deletion and force pushes.
-
-Before using a new release as a portfolio demonstration, verify the deployed Pages build and run the core editing, persistence and export flows in a browser.
-
-## Suggested demonstration flow
-
-1. Open the live application.
-2. Switch through System Context, Container, Component and Code.
-3. Select an element and show its description and Markdown documentation.
-4. Edit a document using a table, list and fenced code block; verify the preview.
-5. Reload the page and verify the current project state is retained.
-6. Save the documentation to a local directory and export the project ZIP.
+The feature branch adds automated schema and backup regression tests, ESLint checks, a production build and MCP server syntax validation in GitHub Actions. A successful CI run does not replace browser-level verification of the rendered application, Supabase account flows or a live MCP client connection.
 
 ## Resume-ready project description
 
 **QuietGridLabs C4 Editor — Independent Product Project**
 
-Designed and developed a browser-based C4 architecture modeling and documentation editor using React, Vite and React Flow. Implemented interactive architecture views across four C4 levels, element-level Markdown documentation with GitHub Flavored Markdown preview, browser-based project persistence and ZIP export. Configured ESLint and production-build checks in GitHub Actions and protected the main branch with required status checks.
-
-*Only use this description after personally verifying the listed workflows in the deployed application. Keep planned features in a separate “Roadmap” statement until they are implemented and tested.*
+Developed a local-first browser editor for C4 architecture models and technical documentation using React, Vite and React Flow. Added versioned JSON/ZIP backup and restore, PlantUML sequence and structured ER modeling, optional Supabase cloud storage with owner-scoped RLS and revision conflict detection, and an MCP server for controlled AI-client access to architecture projects.
