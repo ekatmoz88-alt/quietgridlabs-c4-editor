@@ -33,6 +33,7 @@ export async function createProjectBackup(input) {
     backupVersion: 1,
     projectFormat: PROJECT_FORMAT,
     schemaVersion: PROJECT_SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
     rootDirectory: 'quietgridlabs-project',
     files: [
       'project.json',
