@@ -60,8 +60,8 @@ export function validateProject(input) {
             typeof node.id !== 'string' ||
             !node.id ||
             node.id.includes('/') ||
-            node.id.includes('\\\\') ||
-            node.id.includes('\\0') ||
+            node.id.includes('\\') ||
+            node.id.includes('\0') ||
             node.id === '.' ||
             node.id === '..'
           ) {
