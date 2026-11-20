@@ -31,5 +31,17 @@ jobs:
       - name: Lint source code
         run: npm run lint
 
+      - name: Run automated tests
+        run: npm test
+
+      - name: Install MCP server dependencies
+        run: npm install --prefix mcp-server --no-package-lock
+
+      - name: Check MCP server syntax
+        run: node --check mcp-server/index.js
+
       - name: Build application
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}

@@ -8,7 +8,9 @@ import {
 } from './projectSchema';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import JSZip from 'jszip';
+import { createProjectBackup, readProjectBackup } from './projectBackup';
+import DiagramStudio from './DiagramStudio.jsx';
+import CloudWorkspace from './CloudWorkspace.jsx';
 import {
   ReactFlow,
   Background,
@@ -407,6 +409,8 @@ function App() {
     () => savedProject?.name || 'Internet Banking System',
   );
   const [description, setDescription] = useState('');
+  const [diagrams, setDiagrams] = useState(() => savedProject?.diagrams ?? { sequences: [], erModels: [] });
+  const [workspaceView, setWorkspaceView] = useState('model');
   useEffect(() => {
     try {
       window.localStorage.setItem(
@@ -415,12 +419,13 @@ function App() {
           name: projectName,
           model,
           documentationFiles,
+          diagrams,
         }),
       );
     } catch (error) {
       console.error('Could not save project:', error);
     }
-  }, [model, projectName, documentationFiles]);
+  }, [model, projectName, documentationFiles, diagrams]);
 
 
   const currentDiagram = model[level];
@@ -798,6 +803,7 @@ const importProject = async (event) => {
       ),
     );
     setProjectName(imported.name);
+    setDiagrams(imported.diagrams);
 
     setLevel('context');
     setParentId(null);
@@ -815,6 +821,51 @@ const importProject = async (event) => {
     event.target.value = '';
   }
 };
+const importProjectZip = async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    const imported = await readProjectBackup(file);
+    const preparedDocumentation = createDocumentationFiles(
+      imported.model,
+      imported.documentationFiles,
+    );
+    const confirmed = window.confirm(
+      `Restore "${imported.name}" from ZIP backup?\n\nThe current project will be replaced.`,
+    );
+
+    if (!confirmed) return;
+
+    const storageProject = {
+      name: imported.name,
+      model: imported.model,
+      documentationFiles: preparedDocumentation,
+      diagrams: imported.diagrams,
+    };
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(storageProject),
+    );
+
+    setModel(imported.model);
+    setDocumentationFiles(preparedDocumentation);
+    setProjectName(imported.name);
+    setDiagrams(imported.diagrams);
+    setLevel('context');
+    setParentId(null);
+    setHistory([]);
+    setSelectedId('user');
+    setDescription('');
+    setDocumentationMode('edit');
+  } catch (error) {
+    console.error('Could not restore ZIP backup:', error);
+    window.alert(`Could not restore ZIP backup:\n${error.message}`);
+  } finally {
+    event.target.value = '';
+  }
+};
 const exportProject = () => {
   const project = {
     format: PROJECT_FORMAT,
@@ -822,6 +873,7 @@ const exportProject = () => {
     name: projectName,
     model,
     documentationFiles,
+    diagrams,
   };
 
   const validation = validateProject(project);
@@ -852,60 +904,51 @@ const exportProject = () => {
 };
 
   const exportProjectZip = async () => {
-    const zip = new JSZip();
-    const root = zip.folder('quietgridlabs-project');
-const project = {
-  format: PROJECT_FORMAT,
-  schemaVersion: PROJECT_SCHEMA_VERSION,
-  name: projectName,
-  model,
-  documentationFiles,
-};
+    try {
+      const project = {
+        format: PROJECT_FORMAT,
+        schemaVersion: PROJECT_SCHEMA_VERSION,
+        name: projectName,
+        model,
+        documentationFiles,
+        diagrams,
+      };
+      const archive = await createProjectBackup(project);
+      const blob = new Blob([archive], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
 
-const validation = validateProject(project);
+      link.href = url;
+      link.download = 'quietgridlabs-project.zip';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
 
-if (!validation.valid) {
-  window.alert(
-    `Cannot export project:\n${validation.errors.join('\n')}`,
-  );
-  return;
-}
-
-root.file(
-  'project.json',
-  JSON.stringify(validation.project, null, 2),
-);
-    root.file(
-      'README.md',
-      `# ${projectName}\n\nQuietGridLabs C4 architecture project.\n\nSee the \`docs/\` directory for element documentation.\n`,
-    );
-
-    root.file(
-      'docs/README.md',
-      '# Documentation tree\n\n' +
-      levels.map((item) => `- [${item.label}](./${documentationFolders[item.id]}/)`).join('\n') +
-      '\n',
-    );
-
-    for (const [filePath, content] of Object.entries(documentationFiles)) {
-      root.file(filePath, content);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    } catch (error) {
+      console.error('Could not export ZIP backup:', error);
+      window.alert(`Cannot export ZIP backup:\n${error.message}`);
     }
-
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = 'quietgridlabs-project.zip';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
   };
 
   const currentLevelLabel =
     levels.find((item) => item.id === level)?.label;
+
+  const applyCloudProject = (candidate) => {
+    const validation = validateProject(candidate);
+    if (!validation.valid) throw new Error(validation.errors.join('\n'));
+    const restored = validation.project;
+    const docs = createDocumentationFiles(restored.model, restored.documentationFiles);
+    setModel(restored.model);
+    setDocumentationFiles(docs);
+    setProjectName(restored.name);
+    setDiagrams(restored.diagrams);
+    setLevel('context'); setParentId(null); setHistory([]); setSelectedId('user');
+    const rootNode = restored.model.context.nodes.find((node) => node.id === 'user');
+    setDescription(rootNode?.data?.description || '');
+    setDocumentationMode('edit');
+  };
+  const projectSnapshot = { format: PROJECT_FORMAT, schemaVersion: PROJECT_SCHEMA_VERSION, name: projectName, model, documentationFiles, diagrams };
 
   return (
     <main className="app-shell">
@@ -928,6 +971,19 @@ root.file(
         </div>
 
         <div className="top-actions">
+<input
+  id="project-import-zip-input"
+  type="file"
+  accept=".zip,application/zip"
+  onChange={importProjectZip}
+  hidden
+/>
+<label
+  htmlFor="project-import-zip-input"
+  className="secondary-button"
+>
+  Import ZIP
+</label>
 <input
   id="project-import-input"
   type="file"
@@ -1049,41 +1105,33 @@ root.file(
                 </button>
               )}
 
-              <button
+              <button className={`tool-button ${workspaceView === 'model' ? 'active' : ''}`} onClick={() => setWorkspaceView('model')}>C4 model</button>
+              <button className={`tool-button ${workspaceView === 'diagrams' ? 'active' : ''}`} onClick={() => setWorkspaceView('diagrams')}>Sequence / ER</button>
+              <button className={`tool-button ${workspaceView === 'cloud' ? 'active' : ''}`} onClick={() => setWorkspaceView('cloud')}>Cloud</button>
+              {workspaceView === 'model' && <button
                 className="tool-button"
                 onClick={() => selected && openChild(null, selected)}
                 disabled={!selected?.data.childLevel}
               >
                 Open child level ↗
-              </button>
+              </button>}
             </div>
           </div>
 
-          <div className="canvas">
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onNodeClick={selectNode}
-              onNodeDoubleClick={openChild}
-              fitView
-              fitViewOptions={{ padding: 0.25 }}
-              minZoom={0.2}
-              maxZoom={1.8}
-            >
-              <Background color="#dce3e9" gap={22} size={1} />
-              <Controls />
-              <MiniMap nodeStrokeWidth={3} zoomable pannable />
-            </ReactFlow>
-          </div>
-
-          <div className="canvas-footer">
-            <span>{nodes.length} elements</span>
-            <span>{edges.length} relationships</span>
-            <span>Double-click an element to open its child level</span>
-          </div>
+          {workspaceView === 'model' ? (
+            <>
+              <div className="canvas">
+                <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={selectNode} onNodeDoubleClick={openChild} fitView fitViewOptions={{ padding: 0.25 }} minZoom={0.2} maxZoom={1.8}>
+                  <Background color="#dce3e9" gap={22} size={1} /><Controls /><MiniMap nodeStrokeWidth={3} zoomable pannable />
+                </ReactFlow>
+              </div>
+              <div className="canvas-footer"><span>{nodes.length} elements</span><span>{edges.length} relationships</span><span>Double-click an element to open its child level</span></div>
+            </>
+          ) : workspaceView === 'diagrams' ? (
+            <DiagramStudio diagrams={diagrams} onChange={setDiagrams} elements={Object.entries(model).flatMap(([modelLevel, diagram]) => diagram.nodes.map((node) => ({ ...node, id: modelLevel + ':' + node.id, data: { ...node.data, label: node.data.label + ' · ' + modelLevel } })))} />
+          ) : (
+            <CloudWorkspace project={projectSnapshot} onLoad={applyCloudProject} />
+          )}
         </section>
 
         <aside className="inspector">

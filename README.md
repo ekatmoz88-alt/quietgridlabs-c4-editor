@@ -1,100 +1,55 @@
 # QuietGridLabs C4 Editor
 
-A browser-based C4 architecture modeling and documentation editor built with React and Vite. The application is local-first and is under active development.
-
-## Overview
-
-QuietGridLabs C4 Editor provides a visual workspace for creating and maintaining software architecture models using the C4 model. It combines interactive diagrams, an element inspector, and Markdown documentation.
+A local-first browser editor for C4 architecture models and their technical documentation.
 
 ## Features
 
-- Four C4 levels: System Context, Container, Component, and Code
-- Visual architecture modeling and diagram editing
-- Element descriptions and Markdown documentation
-- Markdown editing toolbar and preview (tables, lists, code blocks and links)
-- Diagram source/image insertion helpers in element documentation
-- Automatic project-state persistence in browser LocalStorage
-- Save the current Markdown file to a selected local directory
-- Save all Markdown documentation files to disk
-- Export project data and documentation as a ZIP archive
+Project data uses the versioned schema v2. Older v1 projects are migrated on import.
+
+- Four C4 levels: System Context, Container, Component and Code.
+- Interactive model editing with React Flow.
+- Markdown documentation attached to C4 elements.
+- First-class UML Sequence diagrams stored as PlantUML source, with rendered preview.
+- Structured ER models: tables, columns, data types, primary/foreign keys, nullability and relationship cardinality.
+- Diagram-to-C4 element associations.
+- LocalStorage persistence without an account.
+- JSON import/export and validated ZIP backup/restore, including diagram artifacts.
+- Optional Supabase authentication and private cloud project storage with optimistic revision checks.
+- Standalone MCP server for AI-client project discovery, reading, search and confirmed project updates.
 
 ## Technology
 
-- React
-- Vite
-- JavaScript
-- @xyflow/react
-- react-markdown and remark-gfm
-- JSZip
-- Browser File System Access API
+React, Vite, JavaScript, React Flow, React Markdown, JSZip, Supabase REST/Auth, PlantUML, Mermaid/Kroki and Model Context Protocol.
 
-## Requirements
-
-- Node.js and npm
-- A Chromium-based browser for direct local-directory saving
-
-## Getting Started
-
-Clone the repository and install dependencies:
+## Getting started
 
 ```bash
 git clone https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor.git
 cd quietgridlabs-c4-editor
 npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
-Open the local URL printed by Vite (usually `http://localhost:5173/`).
+Production build: `npm run build`. Tests: `npm test`. Lint: `npm run lint`.
 
-## Production Build
+## Diagrams
 
-```bash
-npm run build
-```
+Open **Sequence / ER** in the workspace toolbar. Sequence source is stored as PlantUML; ER models are stored as structured entities, columns and relationships. Rendering uses the public Kroki service, so source is sent to that service only when the user explicitly selects **Render preview**. Project data remains available locally if the renderer is unavailable.
 
-The production build is generated in `dist/`.
+## Optional cloud storage and MCP
 
-## Documentation Layout
+See [Cloud storage and MCP setup](docs/cloud-and-mcp-setup.md) for Supabase setup, the owner-only RLS migration and Cursor/Claude Code configuration.
 
-Markdown documentation for C4 elements is stored in `docs/`:
-
-```text
-docs/
-+- README.md
-/+01-context/
-+/02-container/
-/+03-component/
-+/04-code/
-```
-
-Each element has its own Markdown file, for example `docs/04-code/service.md`.
-
-## Saving Documentation
-
-The documentation editor provides three disk actions:
-
-1. **Choose docs folder** — select the local directory where documentation will be written.
-2. **Save current file** — save the selected element's Markdown file.
-3. **Save all** — save all generated Markdown documentation files.
-
-The browser asks for permission to access the selected directory. Browser LocalStorage and files on disk are separate storage locations.
-
-## Project Data and Export
-
-Project state is stored in browser LocalStorage. ZIP export creates a portable archive containing project data and Markdown documentation.
+Cloud storage is opt-in. The current cloud release supports private per-user projects and revision conflict detection; team invitations, shared roles and realtime collaboration are not implemented yet. The MCP server uses a user-scoped Supabase access token and the same RLS boundary. Never configure a service-role key in the browser or MCP host.
 
 ## Project documentation
 
-- [Portfolio case study](docs/portfolio/case-study.md) — implemented capabilities, technology, engineering decisions and a demonstration walkthrough.
-- [Product specification and roadmap](docs/roadmap/product-specification.md) — proposed capabilities and phased implementation plan.
-- [Open feature requests](https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor/issues) — implementation backlog.
+- [Portfolio case study](docs/portfolio/case-study.md)
+- [Product specification and roadmap](docs/roadmap/product-specification.md)
+- [Cloud and MCP setup](docs/cloud-and-mcp-setup.md)
+- [GitHub issues](https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor/issues)
 
-## Repository and demo
+## Links
 
 - [Live application](https://ekatmoz88-alt.github.io/quietgridlabs-c4-editor/)
 - [GitHub repository](https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor)
