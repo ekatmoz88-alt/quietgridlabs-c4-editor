@@ -51,6 +51,19 @@ export default function CloudWorkspace({ project, onLoad }) {
     const item = projects.find((entry) => entry.id === id);
     setRevision(item?.revision ?? null);
   };
+  const handleSignOut = () => run(async () => {
+    try {
+      await signOut();
+    } finally {
+      // Leave the UI signed out even if the remote logout request cannot complete.
+      setSession(null);
+      setPassword('');
+      setShowPassword(false);
+      setProjects([]);
+      setSelectedId('');
+      setRevision(null);
+    }
+  });
 
   return (
     <section className="cloud-workspace">
@@ -81,7 +94,7 @@ export default function CloudWorkspace({ project, onLoad }) {
         <div className="cloud-controls">
           <p>Signed in as <strong>{session.user?.email || 'account'}</strong></p>
           <label>Cloud project<select value={selectedId} onChange={(event) => select(event.target.value)}><option value="">Create a new cloud copy</option>{projects.map((item) => <option key={item.id} value={item.id}>{item.name} · revision {item.revision}</option>)}</select></label>
-          <div className="diagram-actions"><button className="primary-button" disabled={busy} onClick={save}>{selectedId ? 'Save new revision' : 'Upload project'}</button><button className="secondary-button" disabled={busy || !selectedId} onClick={load}>Load selected</button><button className="secondary-button" onClick={() => { const currentSession = getCloudSession(); if (!currentSession?.access_token) { setStatus('Cloud session expired. Sign in again.'); return; } navigator.clipboard.writeText(currentSession.access_token).then(() => setStatus('Current MCP access token copied. Store it as SUPABASE_ACCESS_TOKEN in your MCP host.')).catch(() => setStatus('Clipboard access is unavailable in this browser.')); }}>Copy MCP token</button><button className="secondary-button" disabled={busy} onClick={() => run(async () => { await signOut(); setSession(null); setPassword(''); setShowPassword(false); setProjects([]); setSelectedId(''); setRevision(null); })}>Sign out</button></div>
+          <div className="diagram-actions"><button className="primary-button" disabled={busy} onClick={save}>{selectedId ? 'Save new revision' : 'Upload project'}</button><button className="secondary-button" disabled={busy || !selectedId} onClick={load}>Load selected</button><button className="secondary-button" onClick={() => { const currentSession = getCloudSession(); if (!currentSession?.access_token) { setStatus('Cloud session expired. Sign in again.'); return; } navigator.clipboard.writeText(currentSession.access_token).then(() => setStatus('Current MCP access token copied. Store it as SUPABASE_ACCESS_TOKEN in your MCP host.')).catch(() => setStatus('Clipboard access is unavailable in this browser.')); }}>Copy MCP token</button><button className="secondary-button" disabled={busy} onClick={handleSignOut}>Sign out</button></div>
         </div>
       )}
       {status && <p className="cloud-status-message" role="status">{status}</p>}
