@@ -1,13 +1,14 @@
 # QuietGridLabs C4 Editor — Portfolio Case Study
 
 > **Project status:** active development  
-> **Type:** independent product / portfolio project  
+> **Project type:** independent product / portfolio project  
+> **Role:** sole author and developer; independently responsible for product design, architecture, implementation, documentation and testing  
 > **Live application:** https://ekatmoz88-alt.github.io/quietgridlabs-c4-editor/  
 > **Source code:** https://github.com/ekatmoz88-alt/quietgridlabs-c4-editor
 
 ## Overview
 
-QuietGridLabs C4 Editor is a browser-based workspace for modeling software architecture with C4 and maintaining its supporting documentation and diagrams in one project.
+QuietGridLabs C4 Editor is a browser-based workspace for modeling software architecture with C4 and maintaining its supporting documentation and diagrams in one project. It is designed as a local-first application: core modeling and documentation workflows do not require an account.
 
 ## Implemented capabilities
 
@@ -20,7 +21,7 @@ QuietGridLabs C4 Editor is a browser-based workspace for modeling software archi
 - LocalStorage persistence and local Markdown export.
 - Versioned JSON import/export and validated ZIP backup/restore.
 - Optional Supabase authentication and owner-scoped cloud project storage.
-- Optimistic revision checks to detect concurrent cloud updates.
+- Optimistic revision checks to detect stale cloud updates.
 - MCP server tools for project listing, reading, searching and explicitly confirmed validated updates.
 
 ## Technology
@@ -37,6 +38,10 @@ QuietGridLabs C4 Editor is a browser-based workspace for modeling software archi
 | AI integration | Model Context Protocol SDK |
 | Quality | ESLint, Node test runner, GitHub Actions |
 
+## Individual project work
+
+The product was designed and implemented independently. The work includes defining the product scope and project data model, implementing the C4 editing workflows, building the documentation and diagram features, adding import/export and backup validation, integrating optional cloud storage and the MCP server, and maintaining automated checks and project documentation.
+
 ## Engineering decisions
 
 ### Local-first data ownership
@@ -45,7 +50,7 @@ The editor continues to work without a cloud account. Cloud upload and restore a
 
 ### Portable architecture artifacts
 
-C4 data, Markdown documents, PlantUML sources and structured ER models are stored in a versioned project snapshot. JSON and ZIP import paths validate the complete snapshot before replacing the active local project. Schema v1 projects are normalized to schema v2 with empty diagram collections.
+C4 data, Markdown documents, PlantUML sources and structured ER models are stored in a versioned project snapshot. JSON and ZIP import paths validate the snapshot before replacing the active local project. Schema v1 projects are normalized to schema v2 with empty diagram collections.
 
 ### Diagram source and rendering
 
@@ -55,22 +60,25 @@ PlantUML and ER source data remain the portable source of truth. Preview renderi
 
 The MCP server exposes scoped project tools and uses a user-scoped Supabase access token. Database RLS is the authorization boundary. Mutating tools require explicit confirmation, validate the project schema and compare the expected revision. Service-role credentials are not used.
 
-## Current limitations
+## Current limitations and verification
 
-The following are not yet implemented:
+The following capabilities are not yet implemented:
 
 - Team invitations, owner/editor/viewer sharing roles and project membership management.
 - Realtime multi-user collaboration and presence.
-- OAuth hand-off and automatic token refresh for MCP clients.
 - Typed cross-level relationship explorer and navigation.
-- A deployed Supabase backend and configured production secrets are required before cloud features can be used in the hosted demo.
+- Full MCP OAuth hand-off and automatic token refresh.
+
+Cloud functionality requires a configured Supabase project, database migration, RLS policies and production environment variables. Its complete hosted sign-in and save/load flows must be verified in that configured environment. Cursor and Claude Code setup guidance is available, but end-to-end client compatibility and authentication lifecycle still require verification.
+
+The public GitHub Pages application is available, but deployment alone does not prove every browser workflow. Browser-level smoke testing, a non-confidential demo project and a short public usage walkthrough remain release tasks.
 
 ## Quality and delivery
 
-The feature branch adds automated schema and backup regression tests, ESLint checks, a production build and MCP server syntax validation in GitHub Actions. A successful CI run does not replace browser-level verification of the rendered application, Supabase account flows or a live MCP client connection.
+The repository includes automated tests for project schema and backup behavior, ESLint checks, a production build and MCP server syntax validation in GitHub Actions. The ZIP backup tests cover round trips, legacy migration, unsafe paths, file-list mismatches and documentation consistency. CI checks do not replace browser-level verification of the deployed application, configured Supabase flows or a live MCP client connection.
 
 ## Resume-ready project description
 
 **QuietGridLabs C4 Editor — Independent Product Project**
 
-Developed a local-first browser editor for C4 architecture models and technical documentation using React, Vite and React Flow. Added versioned JSON/ZIP backup and restore, PlantUML sequence and structured ER modeling, optional Supabase cloud storage with owner-scoped RLS and revision conflict detection, and an MCP server for controlled AI-client access to architecture projects.
+Independently designed and developed a local-first browser editor for C4 architecture models and technical documentation using React, Vite and React Flow. Implemented versioned JSON/ZIP backup and restore, PlantUML sequence and structured ER modeling, optional Supabase cloud storage with owner-scoped RLS and revision conflict detection, and an MCP server for controlled AI-client access to architecture projects.
