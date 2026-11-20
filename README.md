@@ -73,6 +73,7 @@ Cloud storage is opt-in. The application code supports private per-user projects
 
 ## Project documentation
 
+- [Bilingual project profile](docs/portfolio/project-profile.md)
 - [Demo scenarios](docs/demo-scenarios.md)
 - [Editor architecture](docs/architecture/overview.md)
 - [Portfolio case study](docs/portfolio/case-study.md)
