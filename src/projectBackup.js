@@ -9,6 +9,8 @@ const ROOT_DIRECTORY = 'quietgridlabs-project/';
 const MANIFEST_PATH = `${ROOT_DIRECTORY}manifest.json`;
 const PROJECT_PATH = `${ROOT_DIRECTORY}project.json`;
 const MAX_ARCHIVE_SIZE = 25 * 1024 * 1024;
+const MAX_ARCHIVE_UNCOMPRESSED_SIZE = 50 * 1024 * 1024;
+const MAX_ENTRY_UNCOMPRESSED_SIZE = 10 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = 1000;
 
 function getValidatedProject(input) {
@@ -64,11 +66,33 @@ export async function readProjectBackup(input) {
     throw new Error('ZIP backup exceeds the 25 MB upload limit.');
   }
 
-  const zip = await JSZip.loadAsync(input, { checkCRC32: true });
+  const zip = await JSZip.loadAsync(input);
   const entries = Object.entries(zip.files);
 
   if (entries.length > MAX_ARCHIVE_ENTRIES) {
     throw new Error('ZIP backup contains too many entries.');
+  }
+
+  let totalUncompressedSize = 0;
+
+  for (const [path, entry] of entries) {
+    if (entry.dir) continue;
+
+    const uncompressedSize = entry._data?.uncompressedSize;
+
+    if (!Number.isSafeInteger(uncompressedSize) || uncompressedSize < 0) {
+      throw new Error(`Could not verify the uncompressed size of ${path}.`);
+    }
+
+    if (uncompressedSize > MAX_ENTRY_UNCOMPRESSED_SIZE) {
+      throw new Error(`ZIP entry exceeds the 10 MB limit: ${path}`);
+    }
+
+    totalUncompressedSize += uncompressedSize;
+
+    if (totalUncompressedSize > MAX_ARCHIVE_UNCOMPRESSED_SIZE) {
+      throw new Error('ZIP backup exceeds the 50 MB uncompressed size limit.');
+    }
   }
 
   const archiveFiles = entries
