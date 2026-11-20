@@ -4,6 +4,8 @@ A local-first browser editor for C4 architecture models and their technical docu
 
 ## Features
 
+Project data uses the versioned schema v2. Older v1 projects are migrated on import.
+
 - Four C4 levels: System Context, Container, Component and Code.
 - Interactive model editing with React Flow.
 - Markdown documentation attached to C4 elements.
