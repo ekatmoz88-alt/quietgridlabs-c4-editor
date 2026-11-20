@@ -944,6 +944,9 @@ const exportProject = () => {
     setProjectName(restored.name);
     setDiagrams(restored.diagrams);
     setLevel('context'); setParentId(null); setHistory([]); setSelectedId('user');
+    const rootNode = restored.model.context.nodes.find((node) => node.id === 'user');
+    setDescription(rootNode?.data?.description || '');
+    setDocumentationMode('edit');
   };
   const projectSnapshot = { format: PROJECT_FORMAT, schemaVersion: PROJECT_SCHEMA_VERSION, name: projectName, model, documentationFiles, diagrams };
 
