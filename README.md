@@ -16,7 +16,7 @@ QuietGridLabs C4 Editor provides a visual workspace for creating and maintaining
 - Automatic project-state persistence in browser LocalStorage
 - Save the current Markdown file to a selected local directory
 - Save all Markdown documentation files to disk
-- Export project data and documentation as a ZIP archive
+- Export and restore project data and documentation as a validated ZIP archive\n- Create and render PlantUML sequence diagrams linked to C4 elements\n- Model ER tables, typed columns, primary/foreign keys, nullability and cardinality relationships\n- Optional Supabase authentication and private cloud project storage with revision conflict detection\n- MCP server for AI-client project discovery, reading, search and validated updates
 
 ## Technology
 
@@ -88,7 +88,7 @@ The browser asks for permission to access the selected directory. Browser LocalS
 
 Project state is stored in browser LocalStorage. ZIP export creates a portable archive containing project data and Markdown documentation.
 
-## Project documentation
+## Cloud and MCP setup\n\nSee [Cloud storage and MCP setup](docs/cloud-and-mcp-setup.md) for Supabase configuration and Cursor/Claude Code setup. Cloud storage is optional; local projects do not require an account.\n\n## Project documentation
 
 - [Portfolio case study](docs/portfolio/case-study.md) — implemented capabilities, technology, engineering decisions and a demonstration walkthrough.
 - [Product specification and roadmap](docs/roadmap/product-specification.md) — proposed capabilities and phased implementation plan.
