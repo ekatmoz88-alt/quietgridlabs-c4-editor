@@ -16,6 +16,15 @@ function headers(token) {
 async function request(path, options = {}, token, retried = false) {
   if (!cloudConfigured) throw new Error('Cloud storage is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
   const response = await fetch(`${config.url}${path}`, { ...options, headers: { ...headers(token), ...options.headers } });
+  if (response.status === 401 && !retried && !path.startsWith('/auth/v1/token')) {
+    const session = getCloudSession();
+    if (session?.refresh_token) {
+      const refreshed = await fetch(config.url + '/auth/v1/token?grant_type=refresh_token', { method: 'POST', headers: headers(), body: JSON.stringify({ refresh_token: session.refresh_token }) });
+      const nextSession = await refreshed.json().catch(() => null);
+      if (refreshed.ok && nextSession?.access_token) { saveSession(nextSession); return request(path, options, nextSession.access_token, true); }
+      saveSession(null);
+    }
+  }
   const payload = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) throw new Error(payload?.msg || payload?.message || payload?.error_description || `Cloud request failed (HTTP ${response.status}).`);
   return payload;
