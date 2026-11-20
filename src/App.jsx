@@ -319,13 +319,13 @@ const initialModel = {
   },
 };
 
-const defaultParents = {
-  context: null,
-  container: 'bank',
-  component: 'api',
-  code: 'payments',
-};
+const getDefaultParent = (model, level) => {
+  if (level === 'context') return null;
 
+  return (
+    model[level]?.nodes?.find((node) => node.parentId)?.parentId ?? null
+  );
+};
 
 // QUIETGRID_DOCUMENTATION_TREE
 const documentationFolders = {
@@ -656,7 +656,7 @@ function App() {
 
   const navigateToLevel = (nextLevel) => {
     setLevel(nextLevel);
-    setParentId(defaultParents[nextLevel]);
+    setParentId(getDefaultParent(model, nextLevel));
     setHistory([]);
     setSelectedId(null);
     setDescription('');

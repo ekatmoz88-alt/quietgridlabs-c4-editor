@@ -102,6 +102,28 @@ export function validateProject(input) {
     for (const [path, content] of Object.entries(
       input.documentationFiles ?? {},
     )) {
+      const segments = path.split('/');
+
+      const isSafePath =
+        path.startsWith('docs/') &&
+        !path.includes('\\') &&
+        !path.includes('\0') &&
+        segments.every(
+          (segment) =>
+            segment &&
+            segment !== '.' &&
+            segment !== '..',
+        ) &&
+        !segments.some((segment) =>
+          ['project.json', 'README.md'].includes(segment),
+        );
+
+      if (!isSafePath) {
+        errors.push(
+          `Documentation path "${path}" is not allowed. Files must be inside docs/.`,
+        );
+      }
+
       if (typeof content !== 'string') {
         errors.push(`Documentation file "${path}" must contain text.`);
       }
