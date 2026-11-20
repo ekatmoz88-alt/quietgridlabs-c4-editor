@@ -2,6 +2,8 @@
 
 A local-first browser editor for C4 architecture models and their technical documentation.
 
+**Project type:** independently designed and developed product project.
+
 ## Features
 
 Project data uses the versioned schema v2. Older v1 projects are migrated on import.
@@ -40,7 +42,7 @@ Open **Sequence / ER** in the workspace toolbar. Sequence source is stored as Pl
 
 See [Cloud storage and MCP setup](docs/cloud-and-mcp-setup.md) for Supabase setup, the owner-only RLS migration and Cursor/Claude Code configuration.
 
-Cloud storage is opt-in. The current cloud release supports private per-user projects and revision conflict detection; team invitations, shared roles and realtime collaboration are not implemented yet. The MCP server uses a user-scoped Supabase access token and the same RLS boundary. Never configure a service-role key in the browser or MCP host.
+Cloud storage is opt-in. The application code supports private per-user projects and revision conflict detection when a Supabase backend is configured. Team invitations, shared roles and realtime collaboration are not implemented. The MCP server uses a user-scoped Supabase access token and the same RLS boundary. Never configure a service-role key in the browser or MCP host.
 
 ## Project documentation
 
