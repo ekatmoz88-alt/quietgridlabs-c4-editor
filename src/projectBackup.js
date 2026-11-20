@@ -109,7 +109,21 @@ export async function readProjectBackup(input) {
     throw new Error('Invalid archive structure.');
   }
 
-  const manifest = JSON.parse(await zip.files[MANIFEST_PATH].async('string'));
+  // Older releases exported the same project folder without a manifest.
+  // Reconstruct a constrained manifest for those known legacy archives.
+  const legacyProject = !zip.files[MANIFEST_PATH]
+    ? JSON.parse(await zip.files[PROJECT_PATH].async('string'))
+    : null;
+  const manifest = zip.files[MANIFEST_PATH]
+    ? JSON.parse(await zip.files[MANIFEST_PATH].async('string'))
+    : {
+        format: 'quietgridlabs-c4-backup',
+        backupVersion: 1,
+        projectFormat: PROJECT_FORMAT,
+        schemaVersion: legacyProject?.schemaVersion ?? 1,
+        rootDirectory: 'quietgridlabs-project',
+        files: archiveFiles.map((path) => path.slice(ROOT_DIRECTORY.length)),
+      };
 
   if (
     !manifest ||
