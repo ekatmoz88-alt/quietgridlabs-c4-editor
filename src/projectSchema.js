@@ -48,14 +48,28 @@ export function validateProject(input) {
       if (!Array.isArray(diagram.nodes)) {
         errors.push(`"${level}".nodes must be an array.`);
       } else {
+        const nodeIds = new Set();
+
         diagram.nodes.forEach((node, index) => {
-          if (!node || typeof node !== 'object') {
+          if (!node || typeof node !== 'object' || Array.isArray(node)) {
             errors.push(`${level}.nodes[${index}] must be an object.`);
             return;
           }
 
-          if (typeof node.id !== 'string' || !node.id) {
-            errors.push(`${level}.nodes[${index}].id is invalid.`);
+          if (
+            typeof node.id !== 'string' ||
+            !node.id ||
+            node.id.includes('/') ||
+            node.id.includes('\\\\') ||
+            node.id.includes('\\0') ||
+            node.id === '.' ||
+            node.id === '..'
+          ) {
+            errors.push(`${level}.nodes[${index}].id is invalid or unsafe for documentation paths.`);
+          } else if (nodeIds.has(node.id)) {
+            errors.push(`${level}.nodes[${index}].id must be unique within the level.`);
+          } else {
+            nodeIds.add(node.id);
           }
 
           if (
