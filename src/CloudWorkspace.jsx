@@ -8,6 +8,7 @@ export default function CloudWorkspace({ project, onLoad }) {
   const [session, setSession] = useState(() => getCloudSession());
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [projects, setProjects] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [revision, setRevision] = useState(null);
@@ -28,6 +29,8 @@ export default function CloudWorkspace({ project, onLoad }) {
   const authenticate = (mode) => run(async () => {
     const next = mode === 'signup' ? await signUp(email, password) : await signIn(email, password);
     setSession(next);
+    setPassword('');
+    setShowPassword(false);
     setStatus(next.access_token ? 'Signed in.' : 'Check your email to confirm your account, then sign in.');
     if (next.access_token) setProjects(await listCloudProjects());
   });
@@ -60,14 +63,25 @@ export default function CloudWorkspace({ project, onLoad }) {
       ) : !session?.access_token ? (
         <div className="cloud-auth">
           <label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-          <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+          <label>Password
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input style={{ flex: 1, minWidth: 0 }} type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+              <button
+                type="button"
+                className="secondary-button"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((visible) => !visible)}
+              >{showPassword ? 'Скрыть' : 'Показать'}</button>
+            </div>
+          </label>
           <div className="diagram-actions"><button className="primary-button" disabled={busy || !email || !password} onClick={() => authenticate('signin')}>Sign in</button><button className="secondary-button" disabled={busy || !email || password.length < 8} onClick={() => authenticate('signup')}>Create account</button></div>
         </div>
       ) : (
         <div className="cloud-controls">
           <p>Signed in as <strong>{session.user?.email || 'account'}</strong></p>
           <label>Cloud project<select value={selectedId} onChange={(event) => select(event.target.value)}><option value="">Create a new cloud copy</option>{projects.map((item) => <option key={item.id} value={item.id}>{item.name} · revision {item.revision}</option>)}</select></label>
-          <div className="diagram-actions"><button className="primary-button" disabled={busy} onClick={save}>{selectedId ? 'Save new revision' : 'Upload project'}</button><button className="secondary-button" disabled={busy || !selectedId} onClick={load}>Load selected</button><button className="secondary-button" onClick={() => { const currentSession = getCloudSession(); if (!currentSession?.access_token) { setStatus('Cloud session expired. Sign in again.'); return; } navigator.clipboard.writeText(currentSession.access_token).then(() => setStatus('Current MCP access token copied. Store it as SUPABASE_ACCESS_TOKEN in your MCP host.')).catch(() => setStatus('Clipboard access is unavailable in this browser.')); }}>Copy MCP token</button><button className="secondary-button" disabled={busy} onClick={() => run(async () => { await signOut(); setSession(null); setProjects([]); setSelectedId(''); setRevision(null); })}>Sign out</button></div>
+          <div className="diagram-actions"><button className="primary-button" disabled={busy} onClick={save}>{selectedId ? 'Save new revision' : 'Upload project'}</button><button className="secondary-button" disabled={busy || !selectedId} onClick={load}>Load selected</button><button className="secondary-button" onClick={() => { const currentSession = getCloudSession(); if (!currentSession?.access_token) { setStatus('Cloud session expired. Sign in again.'); return; } navigator.clipboard.writeText(currentSession.access_token).then(() => setStatus('Current MCP access token copied. Store it as SUPABASE_ACCESS_TOKEN in your MCP host.')).catch(() => setStatus('Clipboard access is unavailable in this browser.')); }}>Copy MCP token</button><button className="secondary-button" disabled={busy} onClick={() => run(async () => { await signOut(); setSession(null); setPassword(''); setShowPassword(false); setProjects([]); setSelectedId(''); setRevision(null); })}>Sign out</button></div>
         </div>
       )}
       {status && <p className="cloud-status-message" role="status">{status}</p>}
