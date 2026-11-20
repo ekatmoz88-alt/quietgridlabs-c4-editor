@@ -26,6 +26,7 @@ export default function DiagramStudio({ diagrams, onChange, elements }) {
   const [selectedSequenceId, setSelectedSequenceId] = useState(diagrams.sequences[0]?.id ?? null);
   const [selectedErId, setSelectedErId] = useState(diagrams.erModels[0]?.id ?? null);
   const [preview, setPreview] = useState({ status: 'idle', url: '', error: '' });
+  const [erPreview, setErPreview] = useState({ status: 'idle', url: '', error: '' });
   const sequences = diagrams.sequences ?? [];
   const erModels = diagrams.erModels ?? [];
   const sequence = sequences.find((item) => item.id === selectedSequenceId) ?? sequences[0] ?? null;
@@ -40,6 +41,7 @@ export default function DiagramStudio({ diagrams, onChange, elements }) {
   const updateErModel = (patch) => {
     if (!erModel) return;
     onChange({ ...diagrams, erModels: erModels.map((item) => item.id === erModel.id ? { ...item, ...patch } : item) });
+    setErPreview({ status: 'idle', url: '', error: '' });
   };
   const addSequence = () => {
     const item = emptySequence();
@@ -73,6 +75,40 @@ export default function DiagramStudio({ diagrams, onChange, elements }) {
       setPreview({ status: 'ready', url, error: '' });
     } catch (error) {
       setPreview({ status: 'error', url: '', error: error.message || 'Could not render PlantUML.' });
+    }
+  };
+  const renderErModel = async () => {
+    if (!erModel) return;
+    const safe = (value) => String(value || 'Entity').replace(/[^a-zA-Z0-9_]/g, '_').replace(/^([0-9])/, '_$1');
+    const lines = ['erDiagram'];
+    for (const entity of erModel.entities) {
+      lines.push('  ' + safe(entity.name) + ' {');
+      for (const column of entity.columns) {
+        const flags = [column.primaryKey ? 'PK' : '', column.foreignKey ? 'FK' : ''].filter(Boolean).join(',');
+        lines.push('    ' + safe(column.type) + ' ' + safe(column.name) + (flags ? ' ' + flags : ''));
+      }
+      lines.push('  }');
+    }
+    const notation = { 'one-to-one': '||--||', 'one-to-many': '||--o{', 'many-to-many': '}o--o{', 'many-to-one': '}o--||' };
+    for (const relation of erModel.relationships) {
+      const from = erModel.entities.find((item) => item.id === relation.from);
+      const to = erModel.entities.find((item) => item.id === relation.to);
+      if (from && to) lines.push('  ' + safe(from.name) + ' ' + notation[relation.cardinality] + ' ' + safe(to.name) + ' : ' + safe(relation.label));
+    }
+    setErPreview({ status: 'loading', url: '', error: '' });
+    try {
+      const response = await fetch('https://kroki.io/mermaid/svg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', Accept: 'image/svg+xml' },
+        body: lines.join('\\n'),
+      });
+      if (!response.ok) throw new Error('Renderer returned HTTP ' + response.status + '.');
+      const svg = await response.text();
+      if (!svg.includes('<svg')) throw new Error('Renderer returned an invalid SVG document.');
+      const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+      setErPreview({ status: 'ready', url, error: '' });
+    } catch (error) {
+      setErPreview({ status: 'error', url: '', error: error.message || 'Could not render ER diagram.' });
     }
   };
   const updateEntity = (entityId, patch) => updateErModel({
@@ -158,6 +194,12 @@ export default function DiagramStudio({ diagrams, onChange, elements }) {
             <div className="diagram-editor">
               <label>Model title<input value={erModel.title} onChange={(event) => updateErModel({ title: event.target.value })} /></label>
               <label>Linked C4 elements<select multiple value={erModel.linkedElementIds} onChange={(event) => updateErModel({ linkedElementIds: Array.from(event.target.selectedOptions, (option) => option.value) })}>{elementOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+              <div className="diagram-actions">
+                <button className="primary-button" onClick={renderErModel} disabled={erPreview.status === 'loading'}>{erPreview.status === 'loading' ? 'Rendering…' : 'Render ER diagram'}</button>
+              </div>
+              {erPreview.error && <p className="diagram-error" role="alert">{erPreview.error}</p>}
+              {erPreview.url && <div className="diagram-preview"><img src={erPreview.url} alt={erModel.title + ' entity relationship diagram'} /></div>}
+              <p className="diagram-note">ER preview sends the generated diagram source to the public Kroki renderer. Table definitions and relationships remain stored locally in the project.</p>
               <div className="er-canvas">
                 {erModel.entities.map((entity) => (
                   <article className="er-entity" key={entity.id}>
