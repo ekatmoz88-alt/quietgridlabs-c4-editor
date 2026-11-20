@@ -26,6 +26,6 @@ export default defineConfig([
   },
   {
     files: ['mcp-server/**/*.js'],
-    languageOptions: { globals: globals.node },
+    languageOptions: { globals: { ...globals.node, fetch: 'readonly' } },
   },
 ])
