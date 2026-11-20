@@ -1,18 +1,10 @@
 const env = import.meta.env ?? {};
-const config = {
-  url: env.VITE_SUPABASE_URL?.replace(/\/$/, ''),
-  key: env.VITE_SUPABASE_ANON_KEY,
-};
-
+const config = { url: env.VITE_SUPABASE_URL?.replace(/\/$/, ''), key: env.VITE_SUPABASE_ANON_KEY };
 export const cloudConfigured = Boolean(config.url && config.key);
 const authKey = 'quietgridlabs-cloud-session';
-
+const authRedirectUrl = new URL(import.meta.env.BASE_URL || '/', window.location.origin).toString();
 function headers(token) {
-  return {
-    apikey: config.key,
-    Authorization: `Bearer ${token || config.key}`,
-    'Content-Type': 'application/json',
-  };
+  return { apikey: config.key, Authorization: `Bearer ${token || config.key}`, 'Content-Type': 'application/json' };
 }
 async function request(path, options = {}, token, retried = false) {
   if (!cloudConfigured) throw new Error('Cloud storage is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
@@ -37,24 +29,37 @@ function saveSession(session) {
   if (session) localStorage.setItem(authKey, JSON.stringify(session));
   else localStorage.removeItem(authKey);
 }
-export async function signIn(email, password) {
-  const session = await request('/auth/v1/token?grant_type=password', { method: 'POST', body: JSON.stringify({ email, password }) });
+export function consumeAuthCallback() {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (!accessToken || !refreshToken) return null;
+  let user = null;
+  try {
+    const part = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(part.padEnd(Math.ceil(part.length / 4) * 4, '=')));
+    user = { id: payload.sub, email: payload.email };
+  } catch { /* Optional display metadata only. */ }
+  const expiresIn = Number(params.get('expires_in') || 3600);
+  const session = { access_token: accessToken, refresh_token: refreshToken, token_type: params.get('token_type') || 'bearer', expires_in: expiresIn, expires_at: Math.floor(Date.now() / 1000) + expiresIn, user };
   saveSession(session);
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
   return session;
 }
+export async function signIn(email, password) {
+  const session = await request('/auth/v1/token?grant_type=password', { method: 'POST', body: JSON.stringify({ email, password }) });
+  saveSession(session); return session;
+}
 export async function signUp(email, password) {
-  const result = await request('/auth/v1/signup', { method: 'POST', body: JSON.stringify({ email, password }) });
+  const redirect = encodeURIComponent(authRedirectUrl);
+  const result = await request(`/auth/v1/signup?redirect_to=${redirect}`, { method: 'POST', body: JSON.stringify({ email, password }) });
   if (result.access_token) saveSession(result);
   return result;
 }
 export async function signOut() {
   const session = getCloudSession();
-  try {
-    if (session?.access_token) await request('/auth/v1/logout', { method: 'POST' }, session.access_token);
-  } finally {
-    // Always clear local credentials, even when the network or Supabase logout endpoint fails.
-    saveSession(null);
-  }
+  try { if (session?.access_token) await request('/auth/v1/logout', { method: 'POST' }, session.access_token); }
+  finally { saveSession(null); }
 }
 export async function listCloudProjects() {
   const session = getCloudSession();
@@ -64,21 +69,13 @@ export async function listCloudProjects() {
 export async function createCloudProject(project) {
   const session = getCloudSession();
   if (!session?.access_token) throw new Error('Sign in to save to cloud.');
-  const rows = await request('/rest/v1/cloud_projects?select=id,name,revision,updated_at', {
-    method: 'POST',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify({ name: project.name, project_data: project }),
-  }, session.access_token);
+  const rows = await request('/rest/v1/cloud_projects?select=id,name,revision,updated_at', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ name: project.name, project_data: project }) }, session.access_token);
   return rows[0];
 }
 export async function updateCloudProject(id, project, revision) {
   const session = getCloudSession();
   if (!session?.access_token) throw new Error('Sign in to save to cloud.');
-  const rows = await request(`/rest/v1/cloud_projects?id=eq.${encodeURIComponent(id)}&revision=eq.${revision}&select=id,name,revision,updated_at`, {
-    method: 'PATCH',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify({ name: project.name, project_data: project, revision: revision + 1, updated_at: new Date().toISOString() }),
-  }, session.access_token);
+  const rows = await request(`/rest/v1/cloud_projects?id=eq.${encodeURIComponent(id)}&revision=eq.${revision}&select=id,name,revision,updated_at`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ name: project.name, project_data: project, revision: revision + 1, updated_at: new Date().toISOString() }) }, session.access_token);
   if (!rows.length) throw new Error('Cloud revision conflict: the project changed on the server. Reload it before saving.');
   return rows[0];
 }
