@@ -8,6 +8,7 @@ export default function CloudWorkspace({ project, onLoad }) {
   const [session, setSession] = useState(() => getCloudSession());
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [projects, setProjects] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [revision, setRevision] = useState(null);
@@ -60,7 +61,18 @@ export default function CloudWorkspace({ project, onLoad }) {
       ) : !session?.access_token ? (
         <div className="cloud-auth">
           <label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-          <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+          <label>Password
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input style={{ flex: 1, minWidth: 0 }} type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+              <button
+                type="button"
+                className="secondary-button"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((visible) => !visible)}
+              >{showPassword ? 'Скрыть' : 'Показать'}</button>
+            </div>
+          </label>
           <div className="diagram-actions"><button className="primary-button" disabled={busy || !email || !password} onClick={() => authenticate('signin')}>Sign in</button><button className="secondary-button" disabled={busy || !email || password.length < 8} onClick={() => authenticate('signup')}>Create account</button></div>
         </div>
       ) : (
