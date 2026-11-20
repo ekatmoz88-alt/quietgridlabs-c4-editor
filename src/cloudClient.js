@@ -1,6 +1,7 @@
+const env = import.meta.env ?? {};
 const config = {
-  url: import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, ''),
-  key: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  url: env.VITE_SUPABASE_URL?.replace(/\/$/, ''),
+  key: env.VITE_SUPABASE_ANON_KEY,
 };
 
 export const cloudConfigured = Boolean(config.url && config.key);
@@ -48,8 +49,12 @@ export async function signUp(email, password) {
 }
 export async function signOut() {
   const session = getCloudSession();
-  if (session?.access_token) await request('/auth/v1/logout', { method: 'POST' }, session.access_token);
-  saveSession(null);
+  try {
+    if (session?.access_token) await request('/auth/v1/logout', { method: 'POST' }, session.access_token);
+  } finally {
+    // Always clear local credentials, even when the network or Supabase logout endpoint fails.
+    saveSession(null);
+  }
 }
 export async function listCloudProjects() {
   const session = getCloudSession();
